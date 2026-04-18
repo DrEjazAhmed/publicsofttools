@@ -2,7 +2,7 @@
  * Hook for loading and managing a PDF document using pdfjs-dist
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
@@ -67,22 +67,25 @@ export function usePDFDocument(file: File): UsePDFDocumentState & {
     };
   }, [file]);
 
-  const getPage = async (pageNum: number): Promise<PDFPageProxy> => {
-    if (!state.pdfDoc) throw new Error('PDF document not loaded');
-    if (pageNum < 1 || pageNum > state.numPages) {
-      throw new Error(`Page ${pageNum} out of range`);
-    }
+  const getPage = useCallback(
+    async (pageNum: number): Promise<PDFPageProxy> => {
+      if (!state.pdfDoc) throw new Error('PDF document not loaded');
+      if (pageNum < 1 || pageNum > state.numPages) {
+        throw new Error(`Page ${pageNum} out of range`);
+      }
 
-    // Check cache first
-    if (pageCache.current.has(pageNum)) {
-      return pageCache.current.get(pageNum)!;
-    }
+      // Check cache first
+      if (pageCache.current.has(pageNum)) {
+        return pageCache.current.get(pageNum)!;
+      }
 
-    // Load and cache page
-    const page = await state.pdfDoc.getPage(pageNum);
-    pageCache.current.set(pageNum, page);
-    return page;
-  };
+      // Load and cache page
+      const page = await state.pdfDoc.getPage(pageNum);
+      pageCache.current.set(pageNum, page);
+      return page;
+    },
+    [state.pdfDoc, state.numPages]
+  );
 
   return {
     ...state,
