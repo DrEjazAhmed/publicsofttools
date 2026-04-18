@@ -1,0 +1,96 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.header p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+}
+
+.uploadSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.uploadBox {
+  background: white;
+  border: 3px dashed #667eea;
+  border-radius: 12px;
+  padding: 60px 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.uploadIcon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.uploadBox h2 {
+  font-size: 1.75rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.uploadBox p {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 1rem;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 40px;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.uploadButton:hover {
+  transform: scale(1.05);
+}
+
+.editorSection {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 1.75rem;
+  }
+
+  .uploadBox {
+    padding: 40px 20px;
+  }
+
+  .uploadIcon {
+    font-size: 3rem;
+  }
+}

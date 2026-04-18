@@ -1,0 +1,148 @@
+.toolbar {
+  display: flex;
+  gap: 20px;
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.toolGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.groupLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.toolButton:hover:not(:disabled) {
+  background: #f0f0f0;
+  border-color: #667eea;
+}
+
+.toolButton.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.toolButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageInput {
+  width: 50px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.pageInfo {
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.zoomSelect {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+}
+
+.exportButton {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.exportButton:hover {
+  background: #5568d3;
+}
+
+.closeButton {
+  padding: 8px 16px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #e0e0e0;
+}
+
+@media (max-width: 1024px) {
+  .toolbar {
+    gap: 10px;
+  }
+
+  .toolGroup {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .toolButton {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .groupLabel {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toolGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

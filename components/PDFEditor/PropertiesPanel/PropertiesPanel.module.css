@@ -1,0 +1,109 @@
+.panel {
+  width: 250px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.noSelection {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.property {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.property label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.property input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.input,
+.select,
+.slider {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.colorInput {
+  width: 100%;
+  height: 36px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.slider {
+  width: 100%;
+  cursor: pointer;
+}
+
+.value {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  .panel {
+    width: 200px;
+    padding: 12px;
+  }
+
+  .property {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e0e0e0;
+    max-height: 200px;
+  }
+}

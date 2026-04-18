@@ -1,0 +1,23 @@
+.pageWrapper {
+  position: relative;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 16px;
+}
+
+.pdfCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.loadingPlaceholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  background: white;
+  color: #666;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

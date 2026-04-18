@@ -1,0 +1,93 @@
+.editorShell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  overflow: hidden;
+}
+
+.loading,
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 600px;
+  color: #666;
+  font-size: 1.1rem;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.loading::before {
+  content: '';
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: #d32f2f;
+}
+
+.workArea {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.canvasArea {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  background: #525659;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.canvasArea::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.canvasArea::-webkit-scrollbar-track {
+  background: #444;
+}
+
+.canvasArea::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+.canvasArea::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+@media (max-width: 1024px) {
+  .canvasArea {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .workArea {
+    flex-direction: column;
+  }
+
+  .canvasArea {
+    padding: 12px;
+  }
+}
