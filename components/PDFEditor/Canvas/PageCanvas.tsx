@@ -91,28 +91,34 @@ export default function PageCanvas({
     };
   }, [pdfPage, zoom]);
 
-  if (!viewport) {
-    return <div className={styles.loadingPlaceholder}>Loading page...</div>;
-  }
-
+  // Canvas must always be in the DOM so the useEffect can find canvasRef.current.
+  // Hiding it (instead of conditional return) breaks the chicken-and-egg: effect needs
+  // the canvas to render, but viewport (which gates rendering) is set inside the effect.
   return (
     <div className={styles.pageWrapper}>
-      <canvas ref={canvasRef} className={styles.pdfCanvas} />
-      <AnnotationLayer
-        pageNum={pageNum}
-        viewport={viewport}
-        annotations={annotations}
-        selectedId={selectedId}
-        editingId={editingId}
-        activeTool={activeTool}
-        onAnnotationAdd={onAnnotationAdd}
-        onAnnotationUpdate={onAnnotationUpdate}
-        onAnnotationDelete={onAnnotationDelete}
-        onAnnotationMove={onAnnotationMove}
-        onAnnotationResize={onAnnotationResize}
-        onSelect={onSelect}
-        onEditing={onEditing}
+      {!viewport && <div className={styles.loadingPlaceholder}>Loading page...</div>}
+      <canvas
+        ref={canvasRef}
+        className={styles.pdfCanvas}
+        style={!viewport ? { display: 'none' } : undefined}
       />
+      {viewport && (
+        <AnnotationLayer
+          pageNum={pageNum}
+          viewport={viewport}
+          annotations={annotations}
+          selectedId={selectedId}
+          editingId={editingId}
+          activeTool={activeTool}
+          onAnnotationAdd={onAnnotationAdd}
+          onAnnotationUpdate={onAnnotationUpdate}
+          onAnnotationDelete={onAnnotationDelete}
+          onAnnotationMove={onAnnotationMove}
+          onAnnotationResize={onAnnotationResize}
+          onSelect={onSelect}
+          onEditing={onEditing}
+        />
+      )}
     </div>
   );
 }

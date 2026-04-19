@@ -7,8 +7,7 @@
 
 .pdfCanvas {
   display: block;
-  width: 100%;
-  height: auto;
+  /* Width and height are set explicitly by JS — no CSS override */
 }
 
 .loadingPlaceholder {

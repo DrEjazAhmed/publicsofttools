@@ -7,13 +7,23 @@ import styles from './page.module.css';
 export default function PDFEditorPage() {
   const [file, setFile] = useState<File | null>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0];
-    if (uploadedFile && uploadedFile.type === 'application/pdf') {
+  const acceptFile = (uploadedFile: File) => {
+    if (uploadedFile.type === 'application/pdf' || uploadedFile.name.toLowerCase().endsWith('.pdf')) {
       setFile(uploadedFile);
     } else {
       alert('Please select a valid PDF file');
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0];
+    if (uploadedFile) acceptFile(uploadedFile);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const uploadedFile = e.dataTransfer.files?.[0];
+    if (uploadedFile) acceptFile(uploadedFile);
   };
 
   return (
@@ -25,7 +35,11 @@ export default function PDFEditorPage() {
 
       {!file ? (
         <section className={styles.uploadSection}>
-          <div className={styles.uploadBox}>
+          <div
+            className={styles.uploadBox}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
             <div className={styles.uploadIcon}>📄</div>
             <h2>Upload a PDF file</h2>
             <p>Drag and drop your PDF here or click to browse</p>
