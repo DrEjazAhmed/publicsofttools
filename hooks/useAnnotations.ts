@@ -2,7 +2,7 @@
  * Hook for managing annotation state with undo/redo support
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Annotation,
   PageAnnotations,
@@ -20,6 +20,10 @@ export function useAnnotations() {
     { pageAnnotations: new Map() },
   ]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Always-current ref so callbacks don't capture stale state
+  const pageAnnotationsRef = useRef(pageAnnotations);
+  pageAnnotationsRef.current = pageAnnotations;
 
   /**
    * Push current state to history
@@ -53,13 +57,12 @@ export function useAnnotations() {
    */
   const addAnnotation = useCallback(
     (annotation: Annotation) => {
-      setPageAnnotations((prev) => {
-        const newMap = new Map(prev);
-        const pageAnnots = newMap.get(annotation.page) || [];
-        newMap.set(annotation.page, [...pageAnnots, annotation]);
-        pushHistory(newMap);
-        return newMap;
-      });
+      const prev = pageAnnotationsRef.current;
+      const newMap = new Map(prev);
+      const pageAnnots = newMap.get(annotation.page) || [];
+      newMap.set(annotation.page, [...pageAnnots, annotation]);
+      setPageAnnotations(newMap);
+      pushHistory(newMap);
     },
     [pushHistory]
   );
@@ -88,16 +91,12 @@ export function useAnnotations() {
    * Delete an annotation
    */
   const deleteAnnotation = useCallback((id: string, page: number) => {
-    setPageAnnotations((prev) => {
-      const newMap = new Map(prev);
-      const pageAnnots = newMap.get(page) || [];
-      newMap.set(
-        page,
-        pageAnnots.filter((a) => a.id !== id)
-      );
-      pushHistory(newMap);
-      return newMap;
-    });
+    const prev = pageAnnotationsRef.current;
+    const newMap = new Map(prev);
+    const pageAnnots = newMap.get(page) || [];
+    newMap.set(page, pageAnnots.filter((a) => a.id !== id));
+    setPageAnnotations(newMap);
+    pushHistory(newMap);
   }, [pushHistory]);
 
   /**

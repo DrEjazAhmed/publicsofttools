@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { Annotation, ToolType } from '@/lib/annotationTypes';
-import { screenToPdf, pdfRectToScreen, screenRectToPdf } from '@/lib/coordinateUtils';
+import { screenToPdf, pdfToScreen, pdfRectToScreen, screenRectToPdf, screenDeltaToPdf } from '@/lib/coordinateUtils';
 import AnnotationObject from './AnnotationObject';
 import { PageViewport } from './PageCanvas';
 import styles from './AnnotationLayer.module.css';
@@ -48,6 +48,8 @@ interface ResizeState {
   handle: string; // 'nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'
   startX: number;
   startY: number;
+  startAnnX: number;
+  startAnnY: number;
   startWidth: number;
   startHeight: number;
 }
@@ -75,8 +77,15 @@ export default function AnnotationLayer({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [resizeState, setResizeState] = useState<ResizeState | null>(null);
 
+  // Refs mirror the above state for use in event handlers — avoids stale-closure
+  // issues when mousedown and mouseup fire before a React re-render commits.
+  const drawStateRef = useRef<DrawState | null>(null);
+  const dragStateRef = useRef<DragState | null>(null);
+  const resizeStateRef = useRef<ResizeState | null>(null);
+
   // Handle mouse down on SVG
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    console.log('[AnnotationLayer] mousedown — tool:', activeTool, 'editingId:', editingId, 'svgRef:', !!svgRef.current);
     if (!svgRef.current || editingId) return;
 
     const rect = svgRef.current.getBoundingClientRect();
@@ -94,36 +103,51 @@ export default function AnnotationLayer({
           const handle = target.getAttribute('data-handle')!;
           const ann = annotations.find((a) => a.id === annotId);
           if (ann) {
-            setResizeState({
+            const rs: ResizeState = {
               selectedId: annotId,
               handle,
               startX: screenX,
               startY: screenY,
+              startAnnX: ann.x,
+              startAnnY: ann.y,
               startWidth: ann.width,
               startHeight: ann.height,
-            });
+            };
+            resizeStateRef.current = rs;
+            setResizeState(rs);
             setMouseState('resizing');
           }
         } else {
-          // Prepare to drag
+          // Prepare to drag — anchor is the PDF x,y point in screen space
           const ann = annotations.find((a) => a.id === annotId);
           if (ann) {
-            const screenRect = pdfRectToScreen(ann.x, ann.y, ann.width, ann.height, viewport);
-            setDragState({
+            const anchor = pdfToScreen(ann.x, ann.y, viewport);
+            const ds: DragState = {
               selectedId: annotId,
-              offsetX: screenX - screenRect.x,
-              offsetY: screenY - screenRect.y,
-            });
+              offsetX: screenX - anchor.x,
+              offsetY: screenY - anchor.y,
+            };
+            dragStateRef.current = ds;
+            setDragState(ds);
             setMouseState('dragging');
           }
         }
       } else {
         onSelect(null);
       }
-    } else if (activeTool !== 'eraser') {
+    } else if (activeTool === 'eraser') {
+      const target = e.target as SVGElement;
+      const annotId = target.getAttribute('data-annotation-id');
+      if (annotId) {
+        onAnnotationDelete(annotId, pageNum);
+        if (selectedId === annotId) onSelect(null);
+      }
+    } else {
       // Start drawing
       const { x: pdfX, y: pdfY } = screenToPdf(screenX, screenY, viewport);
-      setDrawState({ startX: pdfX, startY: pdfY, currentX: pdfX, currentY: pdfY });
+      const ds: DrawState = { startX: pdfX, startY: pdfY, currentX: pdfX, currentY: pdfY };
+      drawStateRef.current = ds;
+      setDrawState(ds);
       setMouseState('drawing');
     }
   };
@@ -137,85 +161,95 @@ export default function AnnotationLayer({
     const screenY = e.clientY - rect.top;
     const { x: pdfX, y: pdfY } = screenToPdf(screenX, screenY, viewport);
 
-    if (mouseState === 'drawing' && drawState) {
-      setDrawState((prev) => (prev ? { ...prev, currentX: pdfX, currentY: pdfY } : null));
-    } else if (mouseState === 'dragging' && dragState && selectedId) {
+    const activeDraw = drawStateRef.current;
+    const activeDrag = dragStateRef.current;
+    const activeResize = resizeStateRef.current;
+
+    if (activeDraw) {
+      const updated = { ...activeDraw, currentX: pdfX, currentY: pdfY };
+      drawStateRef.current = updated;
+      setDrawState(updated);
+    } else if (activeDrag && selectedId) {
       const ann = annotations.find((a) => a.id === selectedId);
       if (ann) {
-        const screenRect = pdfRectToScreen(ann.x, ann.y, ann.width, ann.height, viewport);
-        const newScreenX = screenX - dragState.offsetX;
-        const newScreenY = screenY - dragState.offsetY;
+        const newScreenX = screenX - activeDrag.offsetX;
+        const newScreenY = screenY - activeDrag.offsetY;
         const { x: newPdfX, y: newPdfY } = screenToPdf(newScreenX, newScreenY, viewport);
-
         const dx = newPdfX - ann.x;
         const dy = newPdfY - ann.y;
         onAnnotationMove(selectedId, pageNum, dx, dy);
       }
-    } else if (mouseState === 'resizing' && resizeState && selectedId) {
-      const ann = annotations.find((a) => a.id === selectedId);
-      if (ann) {
-        const deltaX = screenX - resizeState.startX;
-        const deltaY = screenY - resizeState.startY;
+    } else if (activeResize && selectedId) {
+      const deltaX = screenX - activeResize.startX;
+      const deltaY = screenY - activeResize.startY;
+      const pdfDeltaX = screenDeltaToPdf(deltaX, 0, viewport).x;
+      const pdfDeltaY = screenDeltaToPdf(0, deltaY, viewport).y;
 
-        let newX = ann.x;
-        let newY = ann.y;
-        let newW = resizeState.startWidth;
-        let newH = resizeState.startHeight;
+      let newX = activeResize.startAnnX;
+      let newY = activeResize.startAnnY;
+      let newW = activeResize.startWidth;
+      let newH = activeResize.startHeight;
 
-        const handle = resizeState.handle;
+      const handle = activeResize.handle;
 
-        // Adjust based on which handle is being dragged
-        if (handle.includes('w')) {
-          // West handles move left
-          const { x: deltaInPdf } = screenToPdf(deltaX, 0, viewport);
-          newX = ann.x + deltaInPdf;
-          newW = resizeState.startWidth - deltaInPdf;
-        }
-        if (handle.includes('e')) {
-          // East handles
-          const { x: deltaInPdf } = screenToPdf(deltaX, 0, viewport);
-          newW = resizeState.startWidth + deltaInPdf;
-        }
-        if (handle.includes('n')) {
-          // North handles (up, y increases in PDF space)
-          const { y: deltaInPdf } = screenToPdf(0, deltaY, viewport);
-          newH = resizeState.startHeight + deltaInPdf;
-        }
-        if (handle.includes('s')) {
-          // South handles (down, y decreases in PDF space)
-          const { y: deltaInPdf } = screenToPdf(0, deltaY, viewport);
-          newY = ann.y + deltaInPdf;
-          newH = resizeState.startHeight - deltaInPdf;
-        }
-
-        // Enforce minimum size
-        if (newW < 10) newW = 10;
-        if (newH < 10) newH = 10;
-
-        onAnnotationResize(selectedId, pageNum, newX, newY, newW, newH);
+      if (handle.includes('w')) {
+        newX = activeResize.startAnnX + pdfDeltaX;
+        newW = activeResize.startWidth - pdfDeltaX;
       }
+      if (handle.includes('e')) {
+        newW = activeResize.startWidth + pdfDeltaX;
+      }
+      if (handle.includes('n')) {
+        newH = activeResize.startHeight + pdfDeltaY;
+      }
+      if (handle.includes('s')) {
+        newY = activeResize.startAnnY + pdfDeltaY;
+        newH = activeResize.startHeight - pdfDeltaY;
+      }
+
+      if (newW < 10) newW = 10;
+      if (newH < 10) newH = 10;
+
+      onAnnotationResize(selectedId, pageNum, newX, newY, newW, newH);
     }
   };
 
   // Handle mouse up
   const handleMouseUp = () => {
-    if (mouseState === 'drawing' && drawState && activeTool !== 'select') {
+    // Read from refs — always current even if React hasn't re-rendered since mousedown
+    const currentDraw = drawStateRef.current;
+    console.log('[AnnotationLayer] mouseup — tool:', activeTool, 'drawRef:', currentDraw);
+
+    // Reset refs immediately so a rapid second click starts clean
+    drawStateRef.current = null;
+    dragStateRef.current = null;
+    resizeStateRef.current = null;
+
+    if (currentDraw) {
       // Create annotation
-      const minPdfX = Math.min(drawState.startX, drawState.currentX);
-      const maxPdfX = Math.max(drawState.startX, drawState.currentX);
-      const minPdfY = Math.min(drawState.startY, drawState.currentY);
-      const maxPdfY = Math.max(drawState.startY, drawState.currentY);
+      const minPdfX = Math.min(currentDraw.startX, currentDraw.currentX);
+      const maxPdfX = Math.max(currentDraw.startX, currentDraw.currentX);
+      const minPdfY = Math.min(currentDraw.startY, currentDraw.currentY);
+      const maxPdfY = Math.max(currentDraw.startY, currentDraw.currentY);
 
-      const width = maxPdfX - minPdfX;
-      const height = maxPdfY - minPdfY;
+      let width = maxPdfX - minPdfX;
+      let height = maxPdfY - minPdfY;
 
-      // Only create if large enough (> 1 point in PDF space)
-      if (width > 1 && height > 1) {
+      // Text tool: allow single click — create a default-sized box
+      if (activeTool === 'text') {
+        if (width < 20) width = 150;
+        if (height < 20) height = 30;
+      }
+
+      const isLargeEnough = activeTool === 'line'
+        ? Math.hypot(currentDraw.currentX - currentDraw.startX, currentDraw.currentY - currentDraw.startY) > 2
+        : width > 1 && height > 1;
+      if (isLargeEnough) {
         const newAnn: Annotation = {
           id: crypto.randomUUID(),
           page: pageNum,
-          x: minPdfX,
-          y: minPdfY,
+          x: activeTool === 'line' ? currentDraw.startX : minPdfX,
+          y: activeTool === 'line' ? currentDraw.startY : minPdfY,
           width,
           height,
           ...(activeTool === 'text' && {
@@ -247,6 +281,14 @@ export default function AnnotationLayer({
             strokeWidth: 1,
             opacity: 1,
           }),
+          ...(activeTool === 'line' && {
+            type: 'line',
+            x2: currentDraw.currentX,
+            y2: currentDraw.currentY,
+            strokeColor: '#000000',
+            strokeWidth: 2,
+            opacity: 1,
+          }),
           ...(activeTool === 'watermark' && {
             type: 'watermark',
             text: 'WATERMARK',
@@ -259,10 +301,9 @@ export default function AnnotationLayer({
         } as Annotation;
 
         onAnnotationAdd(newAnn);
+        onSelect(newAnn.id);
 
-        if (activeTool === 'text') {
-          onEditing(newAnn.id);
-        } else if (activeTool === 'watermark') {
+        if (activeTool === 'text' || activeTool === 'watermark') {
           onEditing(newAnn.id);
         }
       }
@@ -302,15 +343,39 @@ export default function AnnotationLayer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, editingId, pageNum, onAnnotationDelete, onSelect, onEditing]);
 
+  const handleDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const target = e.target as SVGElement;
+    const annotId = target.getAttribute('data-annotation-id');
+    if (!annotId) return;
+    const ann = annotations.find((a) => a.id === annotId);
+    if (ann && ann.type === 'text') {
+      onSelect(annotId);
+      onEditing(annotId);
+    }
+  };
+
+  const svgCursor = (() => {
+    if (editingId) return 'default';
+    switch (activeTool) {
+      case 'select': return 'default';
+      case 'text': return 'text';
+      case 'eraser': return 'crosshair';
+      default: return 'crosshair';
+    }
+  })();
+
   return (
     <svg
       ref={svgRef}
       className={styles.overlay}
+      style={{ cursor: svgCursor }}
       viewBox={`0 0 ${viewport.width} ${viewport.height}`}
+      data-editing={editingId ? 'true' : undefined}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onDoubleClick={handleDoubleClick}
     >
       {/* Background rect for event capture */}
       <rect width={viewport.width} height={viewport.height} fill="transparent" />
@@ -327,19 +392,29 @@ export default function AnnotationLayer({
       ))}
 
       {/* Draw draft annotation while drawing */}
-      {mouseState === 'drawing' && drawState && (
-        <rect
-          x={Math.min(drawState.startX, drawState.currentX)}
-          y={Math.min(drawState.startY, drawState.currentY)}
-          width={Math.abs(drawState.currentX - drawState.startX)}
-          height={Math.abs(drawState.currentY - drawState.startY)}
-          fill="none"
-          stroke="#667eea"
-          strokeWidth={2}
-          strokeDasharray="4 4"
-          pointerEvents="none"
-        />
-      )}
+      {mouseState === 'drawing' && drawState && activeTool === 'line' && (() => {
+        const s = pdfToScreen(drawState.startX, drawState.startY, viewport);
+        const e = pdfToScreen(drawState.currentX, drawState.currentY, viewport);
+        return (
+          <line
+            x1={s.x} y1={s.y} x2={e.x} y2={e.y}
+            stroke="#667eea" strokeWidth={2} strokeDasharray="4 4"
+            pointerEvents="none"
+          />
+        );
+      })()}
+      {mouseState === 'drawing' && drawState && activeTool !== 'line' && (() => {
+        const s = pdfToScreen(drawState.startX, drawState.startY, viewport);
+        const e = pdfToScreen(drawState.currentX, drawState.currentY, viewport);
+        return (
+          <rect
+            x={Math.min(s.x, e.x)} y={Math.min(s.y, e.y)}
+            width={Math.abs(e.x - s.x)} height={Math.abs(e.y - s.y)}
+            fill="none" stroke="#667eea" strokeWidth={2} strokeDasharray="4 4"
+            pointerEvents="none"
+          />
+        );
+      })()}
     </svg>
   );
 }

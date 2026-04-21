@@ -4,9 +4,10 @@ interface ResizeHandleProps {
   x: number;
   y: number;
   handle: string; // 'nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w'
+  annotationId: string;
 }
 
-export default function ResizeHandle({ x, y, handle }: ResizeHandleProps) {
+export default function ResizeHandle({ x, y, handle, annotationId }: ResizeHandleProps) {
   const SIZE = 8;
   const HALF_SIZE = SIZE / 2;
 
@@ -26,7 +27,7 @@ export default function ResizeHandle({ x, y, handle }: ResizeHandleProps) {
 
   return (
     <rect
-      data-annotation-id=""
+      data-annotation-id={annotationId}
       data-handle={handle}
       x={x - HALF_SIZE}
       y={y - HALF_SIZE}

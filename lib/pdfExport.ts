@@ -40,18 +40,20 @@ function resolveFont(
   const { fontFamily, bold, italic } = ann;
 
   if (fontFamily === 'Courier') {
+    if (bold && italic) return fonts.courierBoldOblique;
+    if (bold) return fonts.courierBold;
+    if (italic) return fonts.courierOblique;
     return fonts.courier;
   } else if (fontFamily === 'Times-Roman') {
+    if (bold && italic) return fonts.timesBoldItalic;
+    if (bold) return fonts.timesBold;
+    if (italic) return fonts.timesItalic;
     return fonts.timesRoman;
   } else {
     // Helvetica
-    if (bold && italic) {
-      return fonts.helveticaBoldOblique || fonts.helveticaBold || fonts.helvetica;
-    } else if (bold) {
-      return fonts.helveticaBold;
-    } else if (italic) {
-      return fonts.helveticaOblique || fonts.helvetica;
-    }
+    if (bold && italic) return fonts.helveticaBoldOblique;
+    if (bold) return fonts.helveticaBold;
+    if (italic) return fonts.helveticaOblique;
     return fonts.helvetica;
   }
 }
@@ -70,14 +72,16 @@ export async function exportPDF(
   // Embed all standard fonts
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const helveticaOblique = await pdfDoc.embedFont(
-    StandardFonts.HelveticaOblique
-  );
-  const helveticaBoldOblique = await pdfDoc.embedFont(
-    StandardFonts.HelveticaBoldOblique
-  );
+  const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+  const helveticaBoldOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
   const timesRoman = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+  const timesBoldItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic);
   const courier = await pdfDoc.embedFont(StandardFonts.Courier);
+  const courierBold = await pdfDoc.embedFont(StandardFonts.CourierBold);
+  const courierOblique = await pdfDoc.embedFont(StandardFonts.CourierOblique);
+  const courierBoldOblique = await pdfDoc.embedFont(StandardFonts.CourierBoldOblique);
 
   const pages = pdfDoc.getPages();
   const fonts = {
@@ -86,7 +90,13 @@ export async function exportPDF(
     helveticaOblique,
     helveticaBoldOblique,
     timesRoman,
+    timesBold,
+    timesItalic,
+    timesBoldItalic,
     courier,
+    courierBold,
+    courierOblique,
+    courierBoldOblique,
   };
 
   // Process each page

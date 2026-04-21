@@ -1,7 +1,7 @@
 'use client';
 
 import { Annotation, TextAnnotation, HighlightAnnotation, RectangleAnnotation, CircleAnnotation, LineAnnotation, WatermarkAnnotation } from '@/lib/annotationTypes';
-import { pdfRectToScreen } from '@/lib/coordinateUtils';
+import { pdfRectToScreen, pdfToScreen } from '@/lib/coordinateUtils';
 import { PageViewport } from './PageCanvas';
 import ResizeHandle from './ResizeHandle';
 import styles from './AnnotationObject.module.css';
@@ -19,7 +19,20 @@ export default function AnnotationObject({
   isSelected,
   isEditing,
 }: AnnotationObjectProps) {
-  const screenRect = pdfRectToScreen(annotation.x, annotation.y, annotation.width, annotation.height, viewport);
+  const screenRect = (() => {
+    if (annotation.type === 'line') {
+      const lineAnn = annotation as LineAnnotation;
+      const p1 = pdfToScreen(lineAnn.x, lineAnn.y, viewport);
+      const p2 = pdfToScreen(lineAnn.x2, lineAnn.y2, viewport);
+      return {
+        x: Math.min(p1.x, p2.x),
+        y: Math.min(p1.y, p2.y),
+        width: Math.abs(p2.x - p1.x),
+        height: Math.abs(p2.y - p1.y),
+      };
+    }
+    return pdfRectToScreen(annotation.x, annotation.y, annotation.width, annotation.height, viewport);
+  })();
 
   const render = () => {
     switch (annotation.type) {
@@ -29,30 +42,46 @@ export default function AnnotationObject({
 
         return (
           <g data-annotation-id={annotation.id}>
-            <foreignObject
+            {/* Hide text content while editing — textarea overlay handles input */}
+            {!isEditing && (
+              <foreignObject
+                x={screenRect.x}
+                y={screenRect.y}
+                width={screenRect.width}
+                height={screenRect.height}
+                style={{ overflow: 'visible' }}
+              >
+                {/* @ts-ignore */}
+                <div
+                  className={styles.textContent}
+                  style={{
+                    fontSize: `${fontSizeScreen}px`,
+                    fontFamily: textAnn.fontFamily.replace('-', ' '),
+                    color: textAnn.fontColor,
+                    fontWeight: textAnn.bold ? 'bold' : 'normal',
+                    fontStyle: textAnn.italic ? 'italic' : 'normal',
+                    opacity: textAnn.opacity,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  }}
+                >
+                  {textAnn.content}
+                </div>
+              </foreignObject>
+            )}
+            {/* Transparent hit-area so SVG mouse events register on text annotations */}
+            <rect
+              data-annotation-id={annotation.id}
               x={screenRect.x}
               y={screenRect.y}
               width={screenRect.width}
               height={screenRect.height}
-            >
-              {/* @ts-ignore - React doesn't fully support foreignObject HTML children */}
-              <div
-                className={styles.textContent}
-                style={{
-                  fontSize: `${fontSizeScreen}px`,
-                  fontFamily: textAnn.fontFamily.replace('-', ' '),
-                  color: textAnn.fontColor,
-                  fontWeight: textAnn.bold ? 'bold' : 'normal',
-                  fontStyle: textAnn.italic ? 'italic' : 'normal',
-                  opacity: textAnn.opacity,
-                  whiteSpace: 'pre-wrap',
-                  wordWrap: 'break-word',
-                  overflow: 'visible',
-                }}
-              >
-                {textAnn.content}
-              </div>
-            </foreignObject>
+              fill="transparent"
+              pointerEvents={isEditing ? 'none' : 'all'}
+              cursor="move"
+            />
           </g>
         );
       }
@@ -193,14 +222,14 @@ export default function AnnotationObject({
           {/* Resize handles - only for non-line annotations */}
           {annotation.type !== 'line' && (
             <>
-              <ResizeHandle x={screenRect.x} y={screenRect.y} handle="nw" />
-              <ResizeHandle x={screenRect.x + screenRect.width / 2} y={screenRect.y} handle="n" />
-              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y} handle="ne" />
-              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y + screenRect.height / 2} handle="e" />
-              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y + screenRect.height} handle="se" />
-              <ResizeHandle x={screenRect.x + screenRect.width / 2} y={screenRect.y + screenRect.height} handle="s" />
-              <ResizeHandle x={screenRect.x} y={screenRect.y + screenRect.height} handle="sw" />
-              <ResizeHandle x={screenRect.x} y={screenRect.y + screenRect.height / 2} handle="w" />
+              <ResizeHandle x={screenRect.x} y={screenRect.y} handle="nw" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x + screenRect.width / 2} y={screenRect.y} handle="n" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y} handle="ne" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y + screenRect.height / 2} handle="e" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x + screenRect.width} y={screenRect.y + screenRect.height} handle="se" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x + screenRect.width / 2} y={screenRect.y + screenRect.height} handle="s" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x} y={screenRect.y + screenRect.height} handle="sw" annotationId={annotation.id} />
+              <ResizeHandle x={screenRect.x} y={screenRect.y + screenRect.height / 2} handle="w" annotationId={annotation.id} />
             </>
           )}
         </>

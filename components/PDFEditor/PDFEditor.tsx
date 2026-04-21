@@ -44,6 +44,17 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
     setEditingId,
   } = useEditorTool();
 
+  // Scroll to page when currentPage changes
+  useEffect(() => {
+    const el = document.getElementById(`pdf-page-${currentPage}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [currentPage]);
+
+  // Auto-switch to select tool when editing starts so the user can re-edit by double-clicking
+  useEffect(() => {
+    if (editingId) setActiveTool('select');
+  }, [editingId]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -63,9 +74,9 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canUndo, canRedo, undo, redo]);
 
-  // Get selected annotation
+  // Get selected annotation — search all pages, not just currentPage
   const selectedAnnotation = selectedId
-    ? getPageAnnotations(currentPage).find((a) => a.id === selectedId) || null
+    ? Array.from(pageAnnotations.values()).flat().find((a) => a.id === selectedId) ?? null
     : null;
 
   // Handle export
@@ -125,8 +136,8 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
       <div className={styles.workArea}>
         <div className={styles.canvasArea}>
           {Array.from({ length: numPages }, (_, i) => (
+            <div key={i + 1} id={`pdf-page-${i + 1}`}>
             <PageCanvasWithLoader
-              key={i + 1}
               pageNum={i + 1}
               getPage={getPage}
               zoom={zoom}
@@ -142,6 +153,7 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
               onSelect={setSelectedId}
               onEditing={setEditingId}
             />
+            </div>
           ))}
         </div>
 
@@ -172,5 +184,5 @@ function PageCanvasWithLoader(props: any & { pageNum: number; getPage: Function 
   }, [pageNum, getPage]);
 
   if (!pdfPage) return <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>Loading page...</div>;
-  return <PageCanvas {...rest} pdfPage={pdfPage} />;
+  return <PageCanvas {...rest} pdfPage={pdfPage} pageNum={pageNum} />;
 }

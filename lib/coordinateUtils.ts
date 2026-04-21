@@ -63,6 +63,20 @@ export function pdfRectToScreen(
 }
 
 /**
+ * Convert a screen-space delta (dx, dy) to PDF-space delta.
+ * screenToPdf converts absolute coordinates; this handles the offset math.
+ */
+export function screenDeltaToPdf(
+  dx: number,
+  dy: number,
+  viewport: PageViewport
+): { x: number; y: number } {
+  const [ox, oy] = viewport.convertToPdfPoint(0, 0);
+  const [px, py] = viewport.convertToPdfPoint(dx, dy);
+  return { x: px - ox, y: py - oy };
+}
+
+/**
  * Get the bounding box of a screen-space rect in PDF-space
  * Used when resizing/moving objects
  */
