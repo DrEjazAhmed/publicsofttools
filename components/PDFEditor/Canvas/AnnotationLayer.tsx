@@ -99,12 +99,8 @@ export default function AnnotationLayer({
     if (activeTool === 'select') {
       const target = e.target as SVGElement;
 
-      // Text item click → open inline editor immediately
-      const textItemId = target.getAttribute('data-textitem-id');
-      if (textItemId) {
-        onTextItemEdit(textItemId);
-        return;
-      }
+      // Text item rects — let onClick handle; just bail out here to avoid deselecting
+      if (target.hasAttribute('data-textitem')) return;
 
       const annotId = target.getAttribute('data-annotation-id');
       if (annotId) {
@@ -389,11 +385,11 @@ export default function AnnotationLayer({
         return (
           <rect
             key={`hit-${item.id}`}
-            data-textitem-id={item.id}
             x={sr.x}
             y={sr.y}
             width={Math.max(sr.width, 4)}
             height={Math.max(sr.height, 8)}
+            data-textitem
             fill="transparent"
             stroke={hasReplacement ? '#16a34a' : '#3b82f6'}
             strokeWidth={1}
@@ -401,6 +397,7 @@ export default function AnnotationLayer({
             opacity={0.5}
             cursor="text"
             pointerEvents="all"
+            onClick={(e) => { e.stopPropagation(); onTextItemEdit(item.id); }}
           />
         );
       })}

@@ -110,6 +110,7 @@ export interface PDFTextItem {
   height: number;   // PDF space (≈ font size)
   fontSize: number; // pts in PDF user space
   fontName: string;
+  fontFamily: string; // CSS font-family resolved by PDF.js
 }
 
 // itemId → replacement text

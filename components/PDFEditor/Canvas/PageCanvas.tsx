@@ -88,12 +88,13 @@ export default function PageCanvas({
   useEffect(() => {
     if (!pdfPage) return;
     pdfPage.getTextContent().then((content) => {
-      const items: PDFTextItem[] = (content.items as any[])
+      const { items, styles } = content as any;
+      const pdfItems: PDFTextItem[] = (items as any[])
         .filter((item) => 'str' in item && item.str.trim().length > 0)
         .map((item, index) => {
           const t: number[] = item.transform;
-          // font size = vertical scale factor from the transform matrix
           const fontSize = Math.abs(t[3]) || Math.abs(t[0]) || 12;
+          const fontFamily = styles?.[item.fontName]?.fontFamily || 'sans-serif';
           return {
             id: `${pageNum}-${index}`,
             pageNum,
@@ -104,9 +105,10 @@ export default function PageCanvas({
             height: item.height > 0 ? item.height : fontSize,
             fontSize,
             fontName: (item.fontName as string) || '',
+            fontFamily,
           };
         });
-      onTextItemsLoaded(pageNum, items);
+      onTextItemsLoaded(pageNum, pdfItems);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfPage]);
@@ -255,7 +257,7 @@ export default function PageCanvas({
               width: `${Math.max(rect.width + 80, 120)}px`,
               minHeight: `${Math.max(rect.height, 20)}px`,
               fontSize: `${fontSizePx}px`,
-              fontFamily: 'sans-serif',
+              fontFamily: editingTextItem.fontFamily || 'sans-serif',
               color: '#000',
               background: 'rgba(255,255,255,0.97)',
               border: '2px solid #16a34a',
