@@ -18,6 +18,8 @@ import {
   LineAnnotation,
   WatermarkAnnotation,
   PageAnnotations,
+  PDFTextItem,
+  TextReplacements,
 } from './annotationTypes';
 
 /**
@@ -58,12 +60,21 @@ function resolveFont(
   }
 }
 
+function guessStandardFont(fontName: string): StandardFonts {
+  const n = fontName.toLowerCase();
+  if (n.includes('times') || n.includes('serif')) return StandardFonts.TimesRoman;
+  if (n.includes('courier') || n.includes('mono')) return StandardFonts.Courier;
+  return StandardFonts.Helvetica;
+}
+
 /**
- * Export PDF with all annotations merged in
+ * Export PDF with all annotations and text replacements merged in
  */
 export async function exportPDF(
   originalFile: File,
-  pageAnnotations: PageAnnotations
+  pageAnnotations: PageAnnotations,
+  textReplacements: TextReplacements = new Map(),
+  pageTextItems: Map<number, PDFTextItem[]> = new Map()
 ): Promise<Uint8Array | ArrayBuffer> {
   // Load the original PDF
   const arrayBuffer = await originalFile.arrayBuffer();
@@ -98,6 +109,40 @@ export async function exportPDF(
     courierOblique,
     courierBoldOblique,
   };
+
+  // Apply text replacements — white-out original text and draw replacement
+  for (const [itemId, newText] of textReplacements.entries()) {
+    const [pageNumStr] = itemId.split('-');
+    const pageNum = parseInt(pageNumStr, 10);
+    const pageIndex = pageNum - 1;
+    if (pageIndex < 0 || pageIndex >= pages.length) continue;
+
+    const items = pageTextItems.get(pageNum) || [];
+    const item = items.find((i) => i.id === itemId);
+    if (!item) continue;
+
+    const page = pages[pageIndex];
+    const font = await pdfDoc.embedFont(guessStandardFont(item.fontName));
+
+    // White-out the original text bounding box
+    page.drawRectangle({
+      x: item.x - 1,
+      y: item.y - item.height * 0.15,
+      width: item.width + 2,
+      height: item.height * 1.3,
+      color: rgb(1, 1, 1),
+      borderWidth: 0,
+    });
+
+    // Draw replacement text at the same baseline position
+    page.drawText(newText, {
+      x: item.x,
+      y: item.y,
+      size: item.fontSize,
+      font,
+      color: rgb(0, 0, 0),
+    });
+  }
 
   // Process each page
   for (const [pageNum, annotations] of pageAnnotations.entries()) {

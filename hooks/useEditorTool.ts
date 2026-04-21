@@ -11,6 +11,7 @@ export function useEditorTool() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTextItemId, setEditingTextItemId] = useState<string | null>(null);
 
   const setZoomPercent = (percent: number) => {
     setZoom(percent / 100);
@@ -28,5 +29,7 @@ export function useEditorTool() {
     setSelectedId,
     editingId,
     setEditingId,
+    editingTextItemId,
+    setEditingTextItemId,
   };
 }

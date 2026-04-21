@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { Annotation, ToolType } from '@/lib/annotationTypes';
-import { screenToPdf, pdfToScreen, pdfRectToScreen, screenRectToPdf, screenDeltaToPdf } from '@/lib/coordinateUtils';
+import { Annotation, PDFTextItem, TextReplacements, ToolType } from '@/lib/annotationTypes';
+import { screenToPdf, pdfToScreen, pdfRectToScreen, screenDeltaToPdf } from '@/lib/coordinateUtils';
 import AnnotationObject from './AnnotationObject';
 import { PageViewport } from './PageCanvas';
 import styles from './AnnotationLayer.module.css';
@@ -13,7 +13,10 @@ interface AnnotationLayerProps {
   annotations: Annotation[];
   selectedId: string | null;
   editingId: string | null;
+  editingTextItemId: string | null;
   activeTool: ToolType;
+  textItems: PDFTextItem[];
+  textReplacements: TextReplacements;
   onAnnotationAdd: (ann: Annotation) => void;
   onAnnotationUpdate: (id: string, page: number, changes: Partial<Annotation>) => void;
   onAnnotationDelete: (id: string, page: number) => void;
@@ -28,6 +31,7 @@ interface AnnotationLayerProps {
   ) => void;
   onSelect: (id: string | null) => void;
   onEditing: (id: string | null) => void;
+  onTextItemEdit: (id: string) => void;
 }
 
 interface DrawState {
@@ -45,7 +49,7 @@ interface DragState {
 
 interface ResizeState {
   selectedId: string;
-  handle: string; // 'nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'
+  handle: string;
   startX: number;
   startY: number;
   startAnnX: number;
@@ -60,7 +64,10 @@ export default function AnnotationLayer({
   annotations,
   selectedId,
   editingId,
+  editingTextItemId,
   activeTool,
+  textItems,
+  textReplacements,
   onAnnotationAdd,
   onAnnotationUpdate,
   onAnnotationDelete,
@@ -68,35 +75,38 @@ export default function AnnotationLayer({
   onAnnotationResize,
   onSelect,
   onEditing,
+  onTextItemEdit,
 }: AnnotationLayerProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [mouseState, setMouseState] = useState<'idle' | 'drawing' | 'dragging' | 'resizing'>(
-    'idle'
-  );
+  const [mouseState, setMouseState] = useState<'idle' | 'drawing' | 'dragging' | 'resizing'>('idle');
   const [drawState, setDrawState] = useState<DrawState | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [resizeState, setResizeState] = useState<ResizeState | null>(null);
 
-  // Refs mirror the above state for use in event handlers — avoids stale-closure
-  // issues when mousedown and mouseup fire before a React re-render commits.
   const drawStateRef = useRef<DrawState | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
   const resizeStateRef = useRef<ResizeState | null>(null);
 
-  // Handle mouse down on SVG
+  const isEditing = !!(editingId || editingTextItemId);
+
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
-    console.log('[AnnotationLayer] mousedown — tool:', activeTool, 'editingId:', editingId, 'svgRef:', !!svgRef.current);
-    if (!svgRef.current || editingId) return;
+    if (!svgRef.current || isEditing) return;
 
     const rect = svgRef.current.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
 
     if (activeTool === 'select') {
-      // Check if clicking on an annotation
       const target = e.target as SVGElement;
-      const annotId = target.getAttribute('data-annotation-id');
 
+      // Text item click → open inline editor immediately
+      const textItemId = target.getAttribute('data-textitem-id');
+      if (textItemId) {
+        onTextItemEdit(textItemId);
+        return;
+      }
+
+      const annotId = target.getAttribute('data-annotation-id');
       if (annotId) {
         onSelect(annotId);
         if (target.getAttribute('data-handle')) {
@@ -118,7 +128,6 @@ export default function AnnotationLayer({
             setMouseState('resizing');
           }
         } else {
-          // Prepare to drag — anchor is the PDF x,y point in screen space
           const ann = annotations.find((a) => a.id === annotId);
           if (ann) {
             const anchor = pdfToScreen(ann.x, ann.y, viewport);
@@ -143,7 +152,6 @@ export default function AnnotationLayer({
         if (selectedId === annotId) onSelect(null);
       }
     } else {
-      // Start drawing
       const { x: pdfX, y: pdfY } = screenToPdf(screenX, screenY, viewport);
       const ds: DrawState = { startX: pdfX, startY: pdfY, currentX: pdfX, currentY: pdfY };
       drawStateRef.current = ds;
@@ -152,7 +160,6 @@ export default function AnnotationLayer({
     }
   };
 
-  // Handle mouse move
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
 
@@ -191,42 +198,24 @@ export default function AnnotationLayer({
       let newH = activeResize.startHeight;
 
       const handle = activeResize.handle;
-
-      if (handle.includes('w')) {
-        newX = activeResize.startAnnX + pdfDeltaX;
-        newW = activeResize.startWidth - pdfDeltaX;
-      }
-      if (handle.includes('e')) {
-        newW = activeResize.startWidth + pdfDeltaX;
-      }
-      if (handle.includes('n')) {
-        newH = activeResize.startHeight + pdfDeltaY;
-      }
-      if (handle.includes('s')) {
-        newY = activeResize.startAnnY + pdfDeltaY;
-        newH = activeResize.startHeight - pdfDeltaY;
-      }
+      if (handle.includes('w')) { newX = activeResize.startAnnX + pdfDeltaX; newW = activeResize.startWidth - pdfDeltaX; }
+      if (handle.includes('e')) { newW = activeResize.startWidth + pdfDeltaX; }
+      if (handle.includes('n')) { newH = activeResize.startHeight + pdfDeltaY; }
+      if (handle.includes('s')) { newY = activeResize.startAnnY + pdfDeltaY; newH = activeResize.startHeight - pdfDeltaY; }
 
       if (newW < 10) newW = 10;
       if (newH < 10) newH = 10;
-
       onAnnotationResize(selectedId, pageNum, newX, newY, newW, newH);
     }
   };
 
-  // Handle mouse up
   const handleMouseUp = () => {
-    // Read from refs — always current even if React hasn't re-rendered since mousedown
     const currentDraw = drawStateRef.current;
-    console.log('[AnnotationLayer] mouseup — tool:', activeTool, 'drawRef:', currentDraw);
-
-    // Reset refs immediately so a rapid second click starts clean
     drawStateRef.current = null;
     dragStateRef.current = null;
     resizeStateRef.current = null;
 
     if (currentDraw) {
-      // Create annotation
       const minPdfX = Math.min(currentDraw.startX, currentDraw.currentX);
       const maxPdfX = Math.max(currentDraw.startX, currentDraw.currentX);
       const minPdfY = Math.min(currentDraw.startY, currentDraw.currentY);
@@ -235,7 +224,6 @@ export default function AnnotationLayer({
       let width = maxPdfX - minPdfX;
       let height = maxPdfY - minPdfY;
 
-      // Text tool: allow single click — create a default-sized box
       if (activeTool === 'text') {
         if (width < 20) width = 150;
         if (height < 20) height = 30;
@@ -244,6 +232,7 @@ export default function AnnotationLayer({
       const isLargeEnough = activeTool === 'line'
         ? Math.hypot(currentDraw.currentX - currentDraw.startX, currentDraw.currentY - currentDraw.startY) > 2
         : width > 1 && height > 1;
+
       if (isLargeEnough) {
         const newAnn: Annotation = {
           id: crypto.randomUUID(),
@@ -254,7 +243,7 @@ export default function AnnotationLayer({
           height,
           ...(activeTool === 'text' && {
             type: 'text',
-            content: 'Text',
+            content: '',
             fontSize: 12,
             fontFamily: 'Helvetica',
             fontColor: '#000000',
@@ -262,47 +251,15 @@ export default function AnnotationLayer({
             italic: false,
             opacity: 1,
           }),
-          ...(activeTool === 'highlight' && {
-            type: 'highlight',
-            color: '#FFFF00',
-            opacity: 0.4,
-          }),
-          ...(activeTool === 'rectangle' && {
-            type: 'rectangle',
-            fillColor: null,
-            strokeColor: '#000000',
-            strokeWidth: 1,
-            opacity: 1,
-          }),
-          ...(activeTool === 'circle' && {
-            type: 'circle',
-            fillColor: null,
-            strokeColor: '#000000',
-            strokeWidth: 1,
-            opacity: 1,
-          }),
-          ...(activeTool === 'line' && {
-            type: 'line',
-            x2: currentDraw.currentX,
-            y2: currentDraw.currentY,
-            strokeColor: '#000000',
-            strokeWidth: 2,
-            opacity: 1,
-          }),
-          ...(activeTool === 'watermark' && {
-            type: 'watermark',
-            text: 'WATERMARK',
-            fontSize: 48,
-            color: '#CCCCCC',
-            opacity: 0.2,
-            angle: -45,
-            displayOnAllPages: false,
-          }),
+          ...(activeTool === 'highlight' && { type: 'highlight', color: '#FFFF00', opacity: 0.4 }),
+          ...(activeTool === 'rectangle' && { type: 'rectangle', fillColor: null, strokeColor: '#000000', strokeWidth: 1, opacity: 1 }),
+          ...(activeTool === 'circle' && { type: 'circle', fillColor: null, strokeColor: '#000000', strokeWidth: 1, opacity: 1 }),
+          ...(activeTool === 'line' && { type: 'line', x2: currentDraw.currentX, y2: currentDraw.currentY, strokeColor: '#000000', strokeWidth: 2, opacity: 1 }),
+          ...(activeTool === 'watermark' && { type: 'watermark', text: 'WATERMARK', fontSize: 48, color: '#CCCCCC', opacity: 0.2, angle: -45, displayOnAllPages: false }),
         } as Annotation;
 
         onAnnotationAdd(newAnn);
         onSelect(newAnn.id);
-
         if (activeTool === 'text' || activeTool === 'watermark') {
           onEditing(newAnn.id);
         }
@@ -315,7 +272,6 @@ export default function AnnotationLayer({
     setResizeState(null);
   };
 
-  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -323,13 +279,8 @@ export default function AnnotationLayer({
         onEditing(null);
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        // Undo is handled by parent
-      } else if (
-        ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) ||
-        ((e.ctrlKey || e.metaKey) && e.key === 'y')
-      ) {
+      } else if (((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) || ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
         e.preventDefault();
-        // Redo is handled by parent
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedId && editingId !== selectedId) {
           e.preventDefault();
@@ -338,12 +289,12 @@ export default function AnnotationLayer({
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, editingId, pageNum, onAnnotationDelete, onSelect, onEditing]);
 
   const handleDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (isEditing) return;
     const target = e.target as SVGElement;
     const annotId = target.getAttribute('data-annotation-id');
     if (!annotId) return;
@@ -355,7 +306,7 @@ export default function AnnotationLayer({
   };
 
   const svgCursor = (() => {
-    if (editingId) return 'default';
+    if (isEditing) return 'default';
     switch (activeTool) {
       case 'select': return 'default';
       case 'text': return 'text';
@@ -370,17 +321,56 @@ export default function AnnotationLayer({
       className={styles.overlay}
       style={{ cursor: svgCursor }}
       viewBox={`0 0 ${viewport.width} ${viewport.height}`}
-      data-editing={editingId ? 'true' : undefined}
+      data-editing={isEditing ? 'true' : undefined}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Background rect for event capture */}
       <rect width={viewport.width} height={viewport.height} fill="transparent" />
 
-      {/* Render all annotations */}
+      {/* Visual covers for replaced text — white-out + new text rendered above PDF canvas */}
+      {textItems.map((item) => {
+        const replacement = textReplacements.get(item.id);
+        if (!replacement) return null;
+        const sr = pdfRectToScreen(item.x, item.y, item.width, item.height, viewport);
+        const fontSizeScreen = item.fontSize * viewport.scale;
+        return (
+          <g key={`rep-${item.id}`} pointerEvents="none">
+            <rect
+              x={sr.x - 1}
+              y={sr.y - sr.height * 0.15}
+              width={Math.max(sr.width + 2, 4)}
+              height={sr.height * 1.3}
+              fill="white"
+            />
+            <foreignObject
+              x={sr.x}
+              y={sr.y}
+              width={sr.width + 200}
+              height={sr.height * 2}
+              style={{ overflow: 'visible' }}
+            >
+              {/* @ts-ignore */}
+              <div
+                style={{
+                  fontSize: `${fontSizeScreen}px`,
+                  lineHeight: 1,
+                  whiteSpace: 'pre',
+                  color: '#000',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              >
+                {replacement}
+              </div>
+            </foreignObject>
+          </g>
+        );
+      })}
+
+      {/* Annotations */}
       {annotations.map((ann) => (
         <AnnotationObject
           key={ann.id}
@@ -391,29 +381,40 @@ export default function AnnotationLayer({
         />
       ))}
 
-      {/* Draw draft annotation while drawing */}
+      {/* Text item hit areas — only visible in select mode */}
+      {activeTool === 'select' && textItems.map((item) => {
+        if (item.id === editingTextItemId) return null;
+        const sr = pdfRectToScreen(item.x, item.y, item.width, item.height, viewport);
+        const hasReplacement = textReplacements.has(item.id);
+        return (
+          <rect
+            key={`hit-${item.id}`}
+            data-textitem-id={item.id}
+            x={sr.x}
+            y={sr.y}
+            width={Math.max(sr.width, 4)}
+            height={Math.max(sr.height, 8)}
+            fill="transparent"
+            stroke={hasReplacement ? '#16a34a' : '#3b82f6'}
+            strokeWidth={1}
+            strokeDasharray="3 2"
+            opacity={0.5}
+            cursor="text"
+            pointerEvents="all"
+          />
+        );
+      })}
+
+      {/* Draw draft while drawing */}
       {mouseState === 'drawing' && drawState && activeTool === 'line' && (() => {
         const s = pdfToScreen(drawState.startX, drawState.startY, viewport);
         const e = pdfToScreen(drawState.currentX, drawState.currentY, viewport);
-        return (
-          <line
-            x1={s.x} y1={s.y} x2={e.x} y2={e.y}
-            stroke="#667eea" strokeWidth={2} strokeDasharray="4 4"
-            pointerEvents="none"
-          />
-        );
+        return <line x1={s.x} y1={s.y} x2={e.x} y2={e.y} stroke="#667eea" strokeWidth={2} strokeDasharray="4 4" pointerEvents="none" />;
       })()}
       {mouseState === 'drawing' && drawState && activeTool !== 'line' && (() => {
         const s = pdfToScreen(drawState.startX, drawState.startY, viewport);
         const e = pdfToScreen(drawState.currentX, drawState.currentY, viewport);
-        return (
-          <rect
-            x={Math.min(s.x, e.x)} y={Math.min(s.y, e.y)}
-            width={Math.abs(e.x - s.x)} height={Math.abs(e.y - s.y)}
-            fill="none" stroke="#667eea" strokeWidth={2} strokeDasharray="4 4"
-            pointerEvents="none"
-          />
-        );
+        return <rect x={Math.min(s.x, e.x)} y={Math.min(s.y, e.y)} width={Math.abs(e.x - s.x)} height={Math.abs(e.y - s.y)} fill="none" stroke="#667eea" strokeWidth={2} strokeDasharray="4 4" pointerEvents="none" />;
       })()}
     </svg>
   );

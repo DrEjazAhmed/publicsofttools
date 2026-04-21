@@ -98,3 +98,19 @@ export type PageAnnotations = Map<number, Annotation[]>;
 export interface HistoryEntry {
   pageAnnotations: Map<number, Annotation[]>;
 }
+
+// A text item extracted from the PDF page via getTextContent()
+export interface PDFTextItem {
+  id: string;       // `${pageNum}-${index}`
+  pageNum: number;
+  str: string;
+  x: number;        // PDF space: left edge
+  y: number;        // PDF space: baseline (bottom of glyph)
+  width: number;    // PDF space
+  height: number;   // PDF space (≈ font size)
+  fontSize: number; // pts in PDF user space
+  fontName: string;
+}
+
+// itemId → replacement text
+export type TextReplacements = Map<string, string>;
