@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { usePDFDocument } from '@/hooks/usePDFDocument';
 import { useAnnotations } from '@/hooks/useAnnotations';
 import { useEditorTool } from '@/hooks/useEditorTool';
 import { usePDFTextItems } from '@/hooks/usePDFTextItems';
-import { Annotation, PDFTextItem } from '@/lib/annotationTypes';
+import { Annotation, PDFTextItem, WatermarkAnnotation } from '@/lib/annotationTypes';
 import { exportPDF } from '@/lib/pdfExport';
 import Toolbar from './Toolbar/Toolbar';
 import PageCanvas from './Canvas/PageCanvas';
@@ -47,10 +47,15 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
     setEditingTextItemId,
   } = useEditorTool();
   const { textReplacements, pageTextItems, setPageItems, getPageItems, replaceText } = usePDFTextItems();
+  const canvasAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = document.getElementById(`pdf-page-${currentPage}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const container = canvasAreaRef.current;
+    if (!el || !container) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    container.scrollTo({ top: container.scrollTop + elRect.top - containerRect.top, behavior: 'smooth' });
   }, [currentPage]);
 
   // Auto-switch to select when annotation editing starts
@@ -74,6 +79,34 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canUndo, canRedo, undo, redo]);
+
+  // Returns page annotations plus any all-pages watermarks stored on other pages
+  const getPageAnnotationsWithWatermarks = useCallback((page: number): Annotation[] => {
+    const own = getPageAnnotations(page);
+    const extra: Annotation[] = [];
+    for (const [storedPage, anns] of pageAnnotations) {
+      if (storedPage === page) continue;
+      for (const ann of anns) {
+        if (ann.type === 'watermark' && (ann as WatermarkAnnotation).displayOnAllPages) {
+          extra.push(ann);
+        }
+      }
+    }
+    return extra.length > 0 ? [...own, ...extra] : own;
+  }, [getPageAnnotations, pageAnnotations]);
+
+  const handleAnnotationAdd = useCallback((ann: Annotation) => {
+    addAnnotation(ann);
+    // Auto-switch to select so the drawn annotation can be immediately moved/resized
+    if (ann.type !== 'text') {
+      setActiveTool('select');
+    }
+  }, [addAnnotation, setActiveTool]);
+
+  const handleAnnotationDelete = useCallback((id: string, page: number) => {
+    deleteAnnotation(id, page);
+    if (selectedId === id) setSelectedId(null);
+  }, [deleteAnnotation, selectedId, setSelectedId]);
 
   const selectedAnnotation = selectedId
     ? Array.from(pageAnnotations.values()).flat().find((a) => a.id === selectedId) ?? null
@@ -112,7 +145,11 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
     <div className={styles.editorShell}>
       <Toolbar
         activeTool={activeTool}
-        onToolChange={setActiveTool}
+        onToolChange={(tool) => {
+          setActiveTool(tool);
+          setEditingId(null);
+          setEditingTextItemId(null);
+        }}
         currentPage={currentPage}
         numPages={numPages}
         onPageChange={setCurrentPage}
@@ -127,7 +164,7 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
       />
 
       <div className={styles.workArea}>
-        <div className={styles.canvasArea}>
+        <div className={styles.canvasArea} ref={canvasAreaRef}>
           {Array.from({ length: numPages }, (_, i) => (
             <div key={i + 1} id={`pdf-page-${i + 1}`}>
               <PageCanvasWithLoader
@@ -135,15 +172,15 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
                 getPage={getPage}
                 zoom={zoom}
                 activeTool={activeTool}
-                annotations={getPageAnnotations(i + 1)}
+                annotations={getPageAnnotationsWithWatermarks(i + 1)}
                 selectedId={selectedId}
                 editingId={editingId}
                 editingTextItemId={editingTextItemId}
                 textItems={getPageItems(i + 1)}
                 textReplacements={textReplacements}
-                onAnnotationAdd={addAnnotation}
+                onAnnotationAdd={handleAnnotationAdd}
                 onAnnotationUpdate={updateAnnotation}
-                onAnnotationDelete={deleteAnnotation}
+                onAnnotationDelete={handleAnnotationDelete}
                 onAnnotationMove={moveAnnotation}
                 onAnnotationResize={resizeAnnotation}
                 onSelect={setSelectedId}
@@ -160,6 +197,7 @@ export default function PDFEditor({ file, onClear }: PDFEditorProps) {
         <PropertiesPanel
           selectedAnnotation={selectedAnnotation}
           onUpdate={updateAnnotation}
+          onDelete={handleAnnotationDelete}
         />
       </div>
     </div>
