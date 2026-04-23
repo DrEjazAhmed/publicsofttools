@@ -1,198 +1,149 @@
-/**
- * Hook for managing annotation state with undo/redo support
- */
-
 import { useCallback, useRef, useState } from 'react';
 import {
   Annotation,
   PageAnnotations,
   HistoryEntry,
-  TextAnnotation,
 } from '@/lib/annotationTypes';
 
 const MAX_HISTORY = 50;
 
-export function useAnnotations() {
-  const [pageAnnotations, setPageAnnotations] = useState<PageAnnotations>(
-    new Map()
-  );
-  const [history, setHistory] = useState<HistoryEntry[]>([
-    { pageAnnotations: new Map() },
-  ]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+interface HistoryState {
+  entries: HistoryEntry[];
+  index: number;
+}
 
-  // Always-current ref so callbacks don't capture stale state
+export function useAnnotations() {
+  const [pageAnnotations, setPageAnnotations] = useState<PageAnnotations>(new Map());
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
   const pageAnnotationsRef = useRef(pageAnnotations);
   pageAnnotationsRef.current = pageAnnotations;
 
-  /**
-   * Push current state to history
-   */
+  const historyRef = useRef<HistoryState>({
+    entries: [{ pageAnnotations: new Map() }],
+    index: 0,
+  });
+
   const pushHistory = useCallback((annotations: PageAnnotations) => {
-    setHistory((prev) => {
-      // Truncate redo stack
-      const newHistory = prev.slice(0, historyIndex + 1);
+    const h = historyRef.current;
+    const entries = h.entries.slice(0, h.index + 1);
+    entries.push({ pageAnnotations: new Map(annotations) });
+    if (entries.length > MAX_HISTORY) entries.shift();
+    const newIndex = entries.length - 1;
+    historyRef.current = { entries, index: newIndex };
+    setCanUndo(newIndex > 0);
+    setCanRedo(false);
+  }, []);
 
-      // Create snapshot
-      const snapshot: HistoryEntry = {
-        pageAnnotations: new Map(annotations),
-      };
-
-      // Add to history and limit size
-      newHistory.push(snapshot);
-      if (newHistory.length > MAX_HISTORY) {
-        newHistory.shift();
-      }
-
-      return newHistory;
-    });
-
-    setHistoryIndex((prev) =>
-      Math.min(prev + 1, MAX_HISTORY - 1)
-    );
-  }, [historyIndex]);
-
-  /**
-   * Add a new annotation
-   */
-  const addAnnotation = useCallback(
-    (annotation: Annotation) => {
-      const prev = pageAnnotationsRef.current;
-      const newMap = new Map(prev);
-      const pageAnnots = newMap.get(annotation.page) || [];
-      newMap.set(annotation.page, [...pageAnnots, annotation]);
-      setPageAnnotations(newMap);
-      pushHistory(newMap);
-    },
-    [pushHistory]
-  );
-
-  /**
-   * Update an existing annotation
-   */
-  const updateAnnotation = useCallback(
-    (id: string, page: number, changes: Partial<Annotation>) => {
-      setPageAnnotations((prev) => {
-        const newMap = new Map(prev);
-        const pageAnnots = newMap.get(page) || [];
-        const idx = pageAnnots.findIndex((a) => a.id === id);
-        if (idx === -1) return prev;
-
-        const updated = [...pageAnnots];
-        updated[idx] = { ...updated[idx], ...changes } as Annotation;
-        newMap.set(page, updated);
-        return newMap;
-      });
-    },
-    []
-  );
-
-  /**
-   * Delete an annotation
-   */
-  const deleteAnnotation = useCallback((id: string, page: number) => {
+  const addAnnotation = useCallback((annotation: Annotation) => {
     const prev = pageAnnotationsRef.current;
     const newMap = new Map(prev);
-    const pageAnnots = newMap.get(page) || [];
-    newMap.set(page, pageAnnots.filter((a) => a.id !== id));
+    const pageAnnots = newMap.get(annotation.page) || [];
+    newMap.set(annotation.page, [...pageAnnots, annotation]);
     setPageAnnotations(newMap);
     pushHistory(newMap);
   }, [pushHistory]);
 
-  /**
-   * Move an annotation by delta in PDF space
-   */
-  const moveAnnotation = useCallback(
-    (id: string, page: number, dx: number, dy: number) => {
-      setPageAnnotations((prev) => {
-        const newMap = new Map(prev);
-        const pageAnnots = newMap.get(page) || [];
-        const idx = pageAnnots.findIndex((a) => a.id === id);
-        if (idx === -1) return prev;
+  const updateAnnotation = useCallback((id: string, page: number, changes: Partial<Annotation>) => {
+    setPageAnnotations((prev) => {
+      const newMap = new Map(prev);
+      const pageAnnots = newMap.get(page) || [];
+      const idx = pageAnnots.findIndex((a) => a.id === id);
+      if (idx === -1) return prev;
+      const updated = [...pageAnnots];
+      updated[idx] = { ...updated[idx], ...changes } as Annotation;
+      newMap.set(page, updated);
+      return newMap;
+    });
+  }, []);
 
-        const ann = pageAnnots[idx];
-        const updated = [...pageAnnots];
-        updated[idx] = {
-          ...ann,
-          x: ann.x + dx,
-          y: ann.y + dy,
-          ...(ann.type === 'line' && {
-            x2: (ann as any).x2 + dx,
-            y2: (ann as any).y2 + dy,
-          }),
-        };
-        newMap.set(page, updated);
-        return newMap;
-      });
-    },
-    []
-  );
+  const findAnnotationPage = (map: PageAnnotations, id: string, hint: number): number => {
+    if ((map.get(hint) || []).some((a) => a.id === id)) return hint;
+    for (const [p, anns] of map) {
+      if (anns.some((a) => a.id === id)) return p;
+    }
+    return hint;
+  };
 
-  /**
-   * Resize an annotation (for box types)
-   */
-  const resizeAnnotation = useCallback(
-    (
-      id: string,
-      page: number,
-      newX: number,
-      newY: number,
-      newWidth: number,
-      newHeight: number
-    ) => {
-      setPageAnnotations((prev) => {
-        const newMap = new Map(prev);
-        const pageAnnots = newMap.get(page) || [];
-        const idx = pageAnnots.findIndex((a) => a.id === id);
-        if (idx === -1) return prev;
+  const deleteAnnotation = useCallback((id: string, page: number) => {
+    const prev = pageAnnotationsRef.current;
+    const newMap = new Map(prev);
+    const actualPage = findAnnotationPage(newMap, id, page);
+    const pageAnnots = newMap.get(actualPage) || [];
+    newMap.set(actualPage, pageAnnots.filter((a) => a.id !== id));
+    setPageAnnotations(newMap);
+    pushHistory(newMap);
+  }, [pushHistory]);
 
-        const updated = [...pageAnnots];
-        updated[idx] = {
-          ...updated[idx],
-          x: newX,
-          y: newY,
-          width: newWidth,
-          height: newHeight,
-        };
-        newMap.set(page, updated);
-        return newMap;
-      });
-    },
-    []
-  );
+  const moveAnnotation = useCallback((id: string, page: number, dx: number, dy: number) => {
+    setPageAnnotations((prev) => {
+      const newMap = new Map(prev);
+      const actualPage = findAnnotationPage(newMap, id, page);
+      const pageAnnots = newMap.get(actualPage) || [];
+      const idx = pageAnnots.findIndex((a) => a.id === id);
+      if (idx === -1) return prev;
+      const ann = pageAnnots[idx];
+      const updated = [...pageAnnots];
+      updated[idx] = {
+        ...ann,
+        x: ann.x + dx,
+        y: ann.y + dy,
+        ...(ann.type === 'line' && {
+          x2: (ann as any).x2 + dx,
+          y2: (ann as any).y2 + dy,
+        }),
+      };
+      newMap.set(actualPage, updated);
+      return newMap;
+    });
+  }, []);
 
-  /**
-   * Get annotations for a specific page
-   */
+  const resizeAnnotation = useCallback((
+    id: string,
+    page: number,
+    newX: number,
+    newY: number,
+    newWidth: number,
+    newHeight: number,
+  ) => {
+    setPageAnnotations((prev) => {
+      const newMap = new Map(prev);
+      const actualPage = findAnnotationPage(newMap, id, page);
+      const pageAnnots = newMap.get(actualPage) || [];
+      const idx = pageAnnots.findIndex((a) => a.id === id);
+      if (idx === -1) return prev;
+      const updated = [...pageAnnots];
+      updated[idx] = { ...updated[idx], x: newX, y: newY, width: newWidth, height: newHeight };
+      newMap.set(actualPage, updated);
+      return newMap;
+    });
+  }, []);
+
   const getPageAnnotations = useCallback(
-    (page: number): Annotation[] => {
-      return pageAnnotations.get(page) || [];
-    },
+    (page: number): Annotation[] => pageAnnotations.get(page) || [],
     [pageAnnotations]
   );
 
-  /**
-   * Undo last action
-   */
   const undo = useCallback(() => {
-    if (historyIndex <= 0) return;
+    const h = historyRef.current;
+    if (h.index <= 0) return;
+    const newIndex = h.index - 1;
+    historyRef.current = { ...h, index: newIndex };
+    setPageAnnotations(new Map(h.entries[newIndex].pageAnnotations));
+    setCanUndo(newIndex > 0);
+    setCanRedo(true);
+  }, []);
 
-    setHistoryIndex((prev) => prev - 1);
-    setPageAnnotations(new Map(history[historyIndex - 1].pageAnnotations));
-  }, [history, historyIndex]);
-
-  /**
-   * Redo last undone action
-   */
   const redo = useCallback(() => {
-    if (historyIndex >= history.length - 1) return;
-
-    setHistoryIndex((prev) => prev + 1);
-    setPageAnnotations(new Map(history[historyIndex + 1].pageAnnotations));
-  }, [history, historyIndex]);
-
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+    const h = historyRef.current;
+    if (h.index >= h.entries.length - 1) return;
+    const newIndex = h.index + 1;
+    historyRef.current = { ...h, index: newIndex };
+    setPageAnnotations(new Map(h.entries[newIndex].pageAnnotations));
+    setCanUndo(true);
+    setCanRedo(newIndex < h.entries.length - 1);
+  }, []);
 
   return {
     pageAnnotations,
