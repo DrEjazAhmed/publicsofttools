@@ -6,9 +6,10 @@ import styles from './PropertiesPanel.module.css';
 interface PropertiesPanelProps {
   selectedAnnotation: Annotation | null;
   onUpdate: (id: string, page: number, changes: Partial<Annotation>) => void;
+  onDelete: (id: string, page: number) => void;
 }
 
-export default function PropertiesPanel({ selectedAnnotation, onUpdate }: PropertiesPanelProps) {
+export default function PropertiesPanel({ selectedAnnotation, onUpdate, onDelete }: PropertiesPanelProps) {
   if (!selectedAnnotation) {
     return (
       <div className={styles.panel}>
@@ -300,6 +301,15 @@ export default function PropertiesPanel({ selectedAnnotation, onUpdate }: Proper
           </div>
         </>
       )}
+
+      <div className={styles.deleteSection}>
+        <button
+          className={styles.deleteButton}
+          onClick={() => onDelete(selectedAnnotation.id, selectedAnnotation.page)}
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
