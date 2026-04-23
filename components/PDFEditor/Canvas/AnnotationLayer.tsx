@@ -196,8 +196,8 @@ export default function AnnotationLayer({
       const handle = activeResize.handle;
       if (handle.includes('w')) { newX = activeResize.startAnnX + pdfDeltaX; newW = activeResize.startWidth - pdfDeltaX; }
       if (handle.includes('e')) { newW = activeResize.startWidth + pdfDeltaX; }
-      if (handle.includes('n')) { newH = activeResize.startHeight + pdfDeltaY; }
-      if (handle.includes('s')) { newY = activeResize.startAnnY + pdfDeltaY; newH = activeResize.startHeight - pdfDeltaY; }
+      if (handle.includes('n')) { newY = activeResize.startAnnY + pdfDeltaY; newH = activeResize.startHeight - pdfDeltaY; }
+      if (handle.includes('s')) { newH = activeResize.startHeight + pdfDeltaY; }
 
       if (newW < 10) newW = 10;
       if (newH < 10) newH = 10;
@@ -256,7 +256,7 @@ export default function AnnotationLayer({
 
         onAnnotationAdd(newAnn);
         onSelect(newAnn.id);
-        if (activeTool === 'text' || activeTool === 'watermark') {
+        if (activeTool === 'text') {
           onEditing(newAnn.id);
         }
       }
@@ -267,6 +267,17 @@ export default function AnnotationLayer({
     setDragState(null);
     setResizeState(null);
   };
+
+  // Reset all in-progress mouse interaction when the active tool changes
+  useEffect(() => {
+    drawStateRef.current = null;
+    dragStateRef.current = null;
+    resizeStateRef.current = null;
+    setMouseState('idle');
+    setDrawState(null);
+    setDragState(null);
+    setResizeState(null);
+  }, [activeTool]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

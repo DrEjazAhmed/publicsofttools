@@ -186,11 +186,21 @@ export default function AnnotationObject({
               transform={`rotate(${watermarkAnn.angle} ${centerX} ${centerY})`}
               fontFamily="Arial, sans-serif"
               fontWeight="bold"
-              pointerEvents="all"
-              cursor="move"
+              pointerEvents="none"
             >
               {watermarkAnn.text}
             </text>
+            {/* Transparent hit-area so mouse events register on the watermark */}
+            <rect
+              data-annotation-id={annotation.id}
+              x={screenRect.x}
+              y={screenRect.y}
+              width={screenRect.width}
+              height={screenRect.height}
+              fill="transparent"
+              pointerEvents={isEditing ? 'none' : 'all'}
+              cursor="move"
+            />
           </g>
         );
       }
