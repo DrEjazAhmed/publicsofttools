@@ -1,7 +1,7 @@
 {
   "name": "publicsofttools",
   "version": "1.0.0",
-  "description": "Free online tools for everyone — PDF editor, image converter, compressor and more",
+  "description": "Free online tools for everyone — PDF editor, image converter, AI text summarizer and more",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "heic2any": "^0.0.4",
+    "mammoth": "^1.12.0",
     "next": "^14.0.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.0.0",
