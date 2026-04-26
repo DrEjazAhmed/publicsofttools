@@ -13,34 +13,59 @@ const LENGTH_PARAMS = {
   long:   { max_length: 350, min_length: 100 },
 };
 
-const SENTENCE_COUNT = { short: 3, medium: 6, long: 10 };
+// Target word counts per length — ensures clear difference between levels
+const TARGET_WORDS = { short: 60, medium: 160, long: 320 };
+
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','but','in','on','at','to','for','of','with','by',
+  'is','was','are','were','be','been','being','it','its','this','that','these',
+  'those','as','from','have','has','had','will','would','could','should','may',
+  'might','do','does','did','not','no','so','if','then','than','when','where',
+  'who','which','what','how','also','just','about','into','over','after','while',
+]);
 
 // ── Extractive fallback ───────────────────────────────────────────────
-// Used when no AI API is available or all AI calls fail.
 function extractiveSummarize(text: string, length: string): string {
-  const count = SENTENCE_COUNT[length as keyof typeof SENTENCE_COUNT] ?? 6;
-  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [text];
-  if (sentences.length <= count) return sentences.join(' ').trim();
+  const targetWords = TARGET_WORDS[length as keyof typeof TARGET_WORDS] ?? 160;
 
-  // Score sentences by word frequency
-  const words = text.toLowerCase().match(/\b\w+\b/g) ?? [];
-  const stopWords = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','is','was','are','were','be','been','it','this','that','as','from','have','has','had']);
+  const sentences = text
+    .replace(/\n+/g, ' ')
+    .match(/[^.!?]+[.!?]+/g)
+    ?.map(s => s.trim())
+    .filter(s => s.split(/\s+/).length >= 6) // skip fragments
+    ?? [];
+
+  if (sentences.length === 0) return text.slice(0, targetWords * 6).trim();
+  if (sentences.length <= 3) return sentences.join(' ').trim();
+
+  // Word frequency (only meaningful words)
+  const allWords = text.toLowerCase().match(/\b[a-z]{4,}\b/g) ?? [];
   const freq: Record<string, number> = {};
-  for (const w of words) {
-    if (!stopWords.has(w) && w.length > 2) freq[w] = (freq[w] ?? 0) + 1;
+  for (const w of allWords) {
+    if (!STOP_WORDS.has(w)) freq[w] = (freq[w] ?? 0) + 1;
   }
 
   const scored = sentences.map((s, i) => {
-    const sWords = s.toLowerCase().match(/\b\w+\b/g) ?? [];
-    const score = sWords.reduce((sum, w) => sum + (freq[w] ?? 0), 0) / (sWords.length || 1);
-    return { s, score, i };
+    const sWords = s.toLowerCase().match(/\b[a-z]{4,}\b/g) ?? [];
+    const freqScore = sWords.reduce((sum, w) => sum + (freq[w] ?? 0), 0) / (sWords.length || 1);
+    // Boost early sentences (topic/intro) and slightly boost final sentences (conclusion)
+    const pos = i / sentences.length;
+    const posBonus = pos < 0.2 ? 1.6 : pos < 0.4 ? 1.2 : pos > 0.85 ? 1.1 : 1.0;
+    return { s, score: freqScore * posBonus, i, wc: sWords.length };
   });
 
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count)
+  // Pick highest-scoring sentences until word target is met
+  const selected: typeof scored = [];
+  let wordCount = 0;
+  for (const item of [...scored].sort((a, b) => b.score - a.score)) {
+    if (wordCount >= targetWords) break;
+    selected.push(item);
+    wordCount += item.wc;
+  }
+
+  return selected
     .sort((a, b) => a.i - b.i)
-    .map(x => x.s.trim())
+    .map(x => x.s)
     .join(' ');
 }
 
