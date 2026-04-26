@@ -16,10 +16,10 @@ export default function Home() {
       icon: '🖼️',
     },
     {
-      id: 'compressor',
-      name: 'Compressor',
-      description: 'Compress images and PDFs to reduce file size',
-      icon: '📦',
+      id: 'ai-text-summarizer',
+      name: 'AI Text Summarizer',
+      description: 'Summarize long text, articles, and documents instantly with AI',
+      icon: '🤖',
     },
   ];
 

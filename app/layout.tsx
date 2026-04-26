@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'PublicSoftTools - Free Online Tools',
-  description: 'Free online tools for everyone — PDF editor, image converter, compressor and more. No signup, no install, 100% browser-based.',
+  description: 'Free online tools for everyone — PDF editor, image converter, AI text summarizer and more. No signup, no install, 100% browser-based.',
 };
 
 export default function RootLayout({
