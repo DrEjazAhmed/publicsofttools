@@ -13,6 +13,7 @@ export function useTextSummarizer() {
   const [file, setFile] = useState<File | null>(null);
   const [summaryLength, setSummaryLength] = useState<SummaryLength>('medium');
   const [summary, setSummary] = useState('');
+  const [isExtractive, setIsExtractive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,7 @@ export function useTextSummarizer() {
       if (!res.ok) throw new Error(data.error || 'Summarization failed');
 
       setSummary(data.summary);
+      setIsExtractive(!!data.extractive);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -70,6 +72,7 @@ export function useTextSummarizer() {
     setUrl('');
     setFile(null);
     setSummary('');
+    setIsExtractive(false);
     setError(null);
   }, []);
 
@@ -79,7 +82,7 @@ export function useTextSummarizer() {
     url, setUrl,
     file, setFile,
     summaryLength, setSummaryLength,
-    summary, isLoading, loadingStep, error,
+    summary, isExtractive, isLoading, loadingStep, error,
     summarize, clear,
   };
 }

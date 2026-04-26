@@ -13,6 +13,38 @@ const LENGTH_PARAMS = {
   long:   { max_length: 350, min_length: 100 },
 };
 
+const SENTENCE_COUNT = { short: 3, medium: 6, long: 10 };
+
+// ── Extractive fallback ───────────────────────────────────────────────
+// Used when no AI API is available or all AI calls fail.
+function extractiveSummarize(text: string, length: string): string {
+  const count = SENTENCE_COUNT[length as keyof typeof SENTENCE_COUNT] ?? 6;
+  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [text];
+  if (sentences.length <= count) return sentences.join(' ').trim();
+
+  // Score sentences by word frequency
+  const words = text.toLowerCase().match(/\b\w+\b/g) ?? [];
+  const stopWords = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','is','was','are','were','be','been','it','this','that','as','from','have','has','had']);
+  const freq: Record<string, number> = {};
+  for (const w of words) {
+    if (!stopWords.has(w) && w.length > 2) freq[w] = (freq[w] ?? 0) + 1;
+  }
+
+  const scored = sentences.map((s, i) => {
+    const sWords = s.toLowerCase().match(/\b\w+\b/g) ?? [];
+    const score = sWords.reduce((sum, w) => sum + (freq[w] ?? 0), 0) / (sWords.length || 1);
+    return { s, score, i };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .sort((a, b) => a.i - b.i)
+    .map(x => x.s.trim())
+    .join(' ');
+}
+
+// ── Chunking ──────────────────────────────────────────────────────────
 function splitIntoChunks(text: string): string[] {
   if (text.length <= MAX_CHUNK_CHARS) return [text];
   const chunks: string[] = [];
@@ -33,6 +65,7 @@ function splitIntoChunks(text: string): string[] {
   return chunks;
 }
 
+// ── HuggingFace ───────────────────────────────────────────────────────
 async function callHuggingFaceModel(
   model: string,
   text: string,
@@ -54,22 +87,22 @@ async function callHuggingFaceModel(
 
   const contentType = res.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
-    throw new Error(
-      res.status === 429
-        ? 'Rate limit reached. Try again shortly or add a HUGGINGFACE_API_KEY.'
-        : `HuggingFace error (HTTP ${res.status})`,
-    );
+    if (res.status === 404) throw new Error('MODEL_NOT_FOUND');
+    if (res.status === 401 || res.status === 403) throw new Error('INVALID_TOKEN');
+    if (res.status === 429) throw new Error('RATE_LIMITED');
+    throw new Error(`HF_HTTP_${res.status}`);
   }
 
   const data = await res.json();
 
   if (!res.ok) {
+    if (res.status === 404) throw new Error('MODEL_NOT_FOUND');
+    if (res.status === 401 || res.status === 403) throw new Error('INVALID_TOKEN');
     if (data?.estimated_time && retries > 0) {
-      const waitMs = Math.min(data.estimated_time * 1000, 20000);
-      await new Promise(r => setTimeout(r, waitMs));
+      await new Promise(r => setTimeout(r, Math.min(data.estimated_time * 1000, 20000)));
       return callHuggingFaceModel(model, text, params, retries - 1);
     }
-    throw new Error(data?.error || `HuggingFace error (HTTP ${res.status})`);
+    throw new Error(data?.error || `HF_HTTP_${res.status}`);
   }
 
   return Array.isArray(data) ? (data[0]?.summary_text ?? '') : (data?.summary_text ?? '');
@@ -79,17 +112,27 @@ async function callHuggingFace(
   text: string,
   params: { max_length: number; min_length: number },
 ): Promise<string> {
-  let lastError = '';
+  let tokenError = false;
   for (const model of HF_MODELS) {
     try {
       return await callHuggingFaceModel(model, text, params);
     } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'INVALID_TOKEN') { tokenError = true; break; }
+      if (msg === 'RATE_LIMITED') throw new Error('HuggingFace rate limit reached. Try again in a moment.');
+      // MODEL_NOT_FOUND or other HTTP errors — try next model
     }
   }
-  throw new Error(`All summarization models failed. Last error: ${lastError}`);
+  if (tokenError) {
+    throw new Error(
+      'HuggingFace token does not have Inference API permission. ' +
+      'Go to huggingface.co/settings/tokens, create a new token, and enable "Make calls to the serverless Inference API".',
+    );
+  }
+  throw new Error('HF_ALL_FAILED');
 }
 
+// ── OpenAI ────────────────────────────────────────────────────────────
 async function callOpenAI(text: string, length: string): Promise<string> {
   const lengthHint =
     length === 'short' ? '2-3 sentences'
@@ -124,15 +167,9 @@ async function callOpenAI(text: string, length: string): Promise<string> {
   return data.choices?.[0]?.message?.content?.trim() ?? '';
 }
 
+// ── Handler ───────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    if (!process.env.OPENAI_API_KEY && !process.env.HUGGINGFACE_API_KEY) {
-      return NextResponse.json(
-        { error: 'No API key configured. Add HUGGINGFACE_API_KEY or OPENAI_API_KEY in your environment variables.' },
-        { status: 503 },
-      );
-    }
-
     const { text, length = 'medium' } = await req.json();
 
     if (!text?.trim()) {
@@ -140,34 +177,46 @@ export async function POST(req: NextRequest) {
     }
 
     const cleaned = text.trim().slice(0, 50000);
-
     if (cleaned.length < 50) {
       return NextResponse.json({ error: 'Text is too short to summarize' }, { status: 400 });
     }
 
-    let summary: string;
-
+    // OpenAI — best quality
     if (process.env.OPENAI_API_KEY) {
-      summary = await callOpenAI(cleaned, length);
-    } else {
-      const params = LENGTH_PARAMS[length as keyof typeof LENGTH_PARAMS] ?? LENGTH_PARAMS.medium;
-      const chunks = splitIntoChunks(cleaned);
+      const summary = await callOpenAI(cleaned, length);
+      return NextResponse.json({ summary });
+    }
 
-      if (chunks.length === 1) {
-        summary = await callHuggingFace(chunks[0], params);
-      } else {
-        const chunkSummaries = await Promise.all(
-          chunks.map(c => callHuggingFace(c, LENGTH_PARAMS.medium)),
-
-        );
-        const combined = chunkSummaries.join(' ');
-        summary = combined.length > MAX_CHUNK_CHARS
-          ? await callHuggingFace(combined.slice(0, MAX_CHUNK_CHARS), params)
-          : combined;
+    // HuggingFace — free AI summarization
+    if (process.env.HUGGINGFACE_API_KEY) {
+      try {
+        const params = LENGTH_PARAMS[length as keyof typeof LENGTH_PARAMS] ?? LENGTH_PARAMS.medium;
+        const chunks = splitIntoChunks(cleaned);
+        let summary: string;
+        if (chunks.length === 1) {
+          summary = await callHuggingFace(chunks[0], params);
+        } else {
+          const parts = await Promise.all(chunks.map(c => callHuggingFace(c, LENGTH_PARAMS.medium)));
+          const combined = parts.join(' ');
+          summary = combined.length > MAX_CHUNK_CHARS
+            ? await callHuggingFace(combined.slice(0, MAX_CHUNK_CHARS), params)
+            : combined;
+        }
+        return NextResponse.json({ summary });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        // If it's a token/permission error, surface it clearly
+        if (msg !== 'HF_ALL_FAILED') {
+          return NextResponse.json({ error: msg }, { status: 500 });
+        }
+        // All HF models unavailable — fall through to extractive
       }
     }
 
-    return NextResponse.json({ summary });
+    // Extractive fallback — no API key needed, works always
+    const summary = extractiveSummarize(cleaned, length);
+    return NextResponse.json({ summary, extractive: true });
+
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Summarization failed';
     return NextResponse.json({ error: message }, { status: 500 });

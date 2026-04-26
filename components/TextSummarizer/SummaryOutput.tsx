@@ -5,10 +5,11 @@ import styles from './SummaryOutput.module.css';
 
 interface Props {
   summary: string;
+  isExtractive?: boolean;
   error: string | null;
 }
 
-export default function SummaryOutput({ summary, error }: Props) {
+export default function SummaryOutput({ summary, isExtractive, error }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -54,6 +55,11 @@ export default function SummaryOutput({ summary, error }: Props) {
         <span className={styles.cardTitle}>Summary</span>
         <span className={styles.wordCount}>{wordCount} words</span>
       </div>
+      {isExtractive && (
+        <div className={styles.extractiveNote}>
+          ⓘ Extractive summary — key sentences selected from the original text. Add a <strong>HUGGINGFACE_API_KEY</strong> for AI-generated summaries.
+        </div>
+      )}
 
       <p className={styles.summaryText}>{summary}</p>
 
