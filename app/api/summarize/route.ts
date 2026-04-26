@@ -47,6 +47,16 @@ async function callHuggingFace(
     },
   );
 
+  // HuggingFace can return HTML error pages (rate limits, Cloudflare, etc.)
+  const contentType = res.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(
+      res.status === 429
+        ? 'Rate limit reached. Add a HUGGINGFACE_API_KEY in your environment variables for higher limits.'
+        : `HuggingFace returned an unexpected response (HTTP ${res.status})`,
+    );
+  }
+
   const data = await res.json();
 
   if (!res.ok) {
@@ -55,7 +65,7 @@ async function callHuggingFace(
       await new Promise(r => setTimeout(r, waitMs));
       return callHuggingFace(text, params, retries - 1);
     }
-    throw new Error(data?.error || `HuggingFace error ${res.status}`);
+    throw new Error(data?.error || `HuggingFace error (HTTP ${res.status})`);
   }
 
   return Array.isArray(data) ? (data[0]?.summary_text ?? '') : (data?.summary_text ?? '');
@@ -86,13 +96,24 @@ async function callOpenAI(text: string, length: string): Promise<string> {
     }),
   });
 
+  const contentType = res.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`OpenAI returned an unexpected response (HTTP ${res.status})`);
+  }
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || `OpenAI error ${res.status}`);
+  if (!res.ok) throw new Error(data?.error?.message || `OpenAI error (HTTP ${res.status})`);
   return data.choices?.[0]?.message?.content?.trim() ?? '';
 }
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.OPENAI_API_KEY && !process.env.HUGGINGFACE_API_KEY) {
+      return NextResponse.json(
+        { error: 'No API key configured. Add HUGGINGFACE_API_KEY or OPENAI_API_KEY in your environment variables.' },
+        { status: 503 },
+      );
+    }
+
     const { text, length = 'medium' } = await req.json();
 
     if (!text?.trim()) {
