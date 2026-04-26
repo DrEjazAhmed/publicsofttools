@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const HF_MODEL = 'facebook/bart-large-cnn';
+const HF_MODELS = [
+  'sshleifer/distilbart-cnn-12-6',
+  'facebook/bart-large-cnn',
+  'Falconsai/text_summarization',
+];
 const MAX_CHUNK_CHARS = 3000;
 
 const LENGTH_PARAMS = {
@@ -29,14 +33,15 @@ function splitIntoChunks(text: string): string[] {
   return chunks;
 }
 
-async function callHuggingFace(
+async function callHuggingFaceModel(
+  model: string,
   text: string,
   params: { max_length: number; min_length: number },
   retries = 1,
 ): Promise<string> {
   const apiKey = process.env.HUGGINGFACE_API_KEY;
   const res = await fetch(
-    `https://api-inference.huggingface.co/models/${HF_MODEL}`,
+    `https://api-inference.huggingface.co/models/${model}`,
     {
       method: 'POST',
       headers: {
@@ -47,13 +52,12 @@ async function callHuggingFace(
     },
   );
 
-  // HuggingFace can return HTML error pages (rate limits, Cloudflare, etc.)
   const contentType = res.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
     throw new Error(
       res.status === 429
-        ? 'Rate limit reached. Add a HUGGINGFACE_API_KEY in your environment variables for higher limits.'
-        : `HuggingFace returned an unexpected response (HTTP ${res.status})`,
+        ? 'Rate limit reached. Try again shortly or add a HUGGINGFACE_API_KEY.'
+        : `HuggingFace error (HTTP ${res.status})`,
     );
   }
 
@@ -63,12 +67,27 @@ async function callHuggingFace(
     if (data?.estimated_time && retries > 0) {
       const waitMs = Math.min(data.estimated_time * 1000, 20000);
       await new Promise(r => setTimeout(r, waitMs));
-      return callHuggingFace(text, params, retries - 1);
+      return callHuggingFaceModel(model, text, params, retries - 1);
     }
     throw new Error(data?.error || `HuggingFace error (HTTP ${res.status})`);
   }
 
   return Array.isArray(data) ? (data[0]?.summary_text ?? '') : (data?.summary_text ?? '');
+}
+
+async function callHuggingFace(
+  text: string,
+  params: { max_length: number; min_length: number },
+): Promise<string> {
+  let lastError = '';
+  for (const model of HF_MODELS) {
+    try {
+      return await callHuggingFaceModel(model, text, params);
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+  }
+  throw new Error(`All summarization models failed. Last error: ${lastError}`);
 }
 
 async function callOpenAI(text: string, length: string): Promise<string> {
@@ -139,6 +158,7 @@ export async function POST(req: NextRequest) {
       } else {
         const chunkSummaries = await Promise.all(
           chunks.map(c => callHuggingFace(c, LENGTH_PARAMS.medium)),
+
         );
         const combined = chunkSummaries.join(' ');
         summary = combined.length > MAX_CHUNK_CHARS
