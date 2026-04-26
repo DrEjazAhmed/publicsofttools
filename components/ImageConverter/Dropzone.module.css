@@ -1,0 +1,100 @@
+.dropzone {
+  border: 2px dashed #d0d5dd;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+  border-color: #667eea;
+  background: #f5f3ff;
+}
+
+.dragging {
+  border-color: #667eea;
+  background: #ede9fe;
+  border-style: solid;
+}
+
+/* ── Full dropzone ── */
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 32px;
+  text-align: center;
+  gap: 12px;
+}
+
+.icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.heading {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.sub {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.formats {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.button {
+  margin-top: 8px;
+  padding: 10px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.input {
+  display: none;
+}
+
+/* ── Compact variant ── */
+
+.compact {
+  border-radius: 8px;
+}
+
+.compactContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #667eea;
+}
+
+.compactIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+  font-weight: 400;
+}
