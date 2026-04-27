@@ -124,7 +124,7 @@ function detectDirectCategory(input: string) {
 
 function detectIntent(input: string): 'navigate_tool' | 'navigate_category' | 'list' | 'suggest' | 'issue' | 'help' | 'home' | 'unknown' {
   const t = input.toLowerCase();
-  if (t.includes('home') || t === 'back' || t.includes('all tools') || t.includes('go back')) return 'home';
+  if (t === 'home' || t === 'back' || t.includes('go home') || t.includes('home page') || t.includes('go back')) return 'home';
   if (detectDirectTool(t)) return 'navigate_tool';
   if (detectDirectCategory(t)) return 'navigate_category';
   if (['show', 'list', 'browse', 'available', 'what can', 'tools'].some(k => t.includes(k))) return 'list';
