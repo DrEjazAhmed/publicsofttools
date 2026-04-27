@@ -1,0 +1,352 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Card ── */
+.card {
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.cardTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* ── Textarea ── */
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  color: #111827;
+  line-height: 1.6;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.outputTextarea {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.monoTextarea {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* ── Button row ── */
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionBtn {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.copyBtn {
+  margin-left: auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.copyBtn:hover:not(:disabled) {
+  opacity: 0.9;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+}
+
+/* ── Output wrapper ── */
+.outputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Error ── */
+.errorMsg {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── JWT Decoder ── */
+.jwtGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.jwtSectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.jsonPre {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  overflow: auto;
+  max-height: 220px;
+  margin: 0;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.jwtMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.metaItem {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 0.875rem;
+}
+
+.metaKey {
+  font-weight: 700;
+  color: #374151;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.expiredBadge {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.validBadge {
+  color: #059669;
+  font-weight: 600;
+}
+
+.sigNote {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* ── Regex Tester ── */
+.regexRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.regexSlash {
+  font-size: 1.6rem;
+  color: #9ca3af;
+  font-family: ui-monospace, monospace;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.regexInput {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  color: #111827;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.regexInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.flagsRow {
+  display: flex;
+  gap: 6px;
+}
+
+.flagLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  cursor: pointer;
+  color: #9ca3af;
+  background: #f3f4f6;
+  user-select: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.flagLabel:hover {
+  background: #e5e7eb;
+}
+
+.flagActive {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.flagActive:hover {
+  background: #5a6fd6;
+}
+
+.matchResults {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.matchCount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.matchList {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.matchItem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.matchValue {
+  font-family: ui-monospace, monospace;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.matchMeta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* ── Data Converter ── */
+.modeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modeBtn {
+  padding: 7px 14px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.modeBtn:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.modeBtnActive {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.modeBtnActive:hover {
+  opacity: 0.9;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .jwtGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .copyBtn {
+    margin-left: 0;
+  }
+}

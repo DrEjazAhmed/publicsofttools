@@ -27,6 +27,12 @@ export default function Home() {
       description: 'Word counter, case converter, and URL/Base64 encoder — all in one place',
       icon: '✏️',
     },
+    {
+      id: 'developer-tools',
+      name: 'Developer Tools',
+      description: 'JWT decoder, regex tester, and JSON/CSV/XML converter — all browser-based',
+      icon: '⚙️',
+    },
   ];
 
   return (
