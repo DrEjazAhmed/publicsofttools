@@ -276,11 +276,9 @@ export default function Chatbot() {
 
     // ── Browse: waiting for category pick ─────────────────────────────
     if (convState === 'browsing_categories') {
-      // Strip emoji prefix if present (e.g. "📁 File Tools" → "file tools")
-      const stripped = t.replace(/\p{Emoji}/gu, '').trim();
       const cat = CATEGORIES.find(c =>
-        stripped.includes(c.label.toLowerCase()) ||
-        c.keywords.some(k => stripped.includes(k))
+        t.includes(c.label.toLowerCase()) ||
+        c.keywords.some(k => t.includes(k))
       );
       if (cat) {
         setActiveCategory(cat);
