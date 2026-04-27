@@ -21,6 +21,12 @@ export default function Home() {
       description: 'Generate QR codes from any text or URL. Customize colors and download as PNG',
       icon: '◼',
     },
+    {
+      id: 'text-tools',
+      name: 'Text Tools',
+      description: 'Word counter, case converter, and URL/Base64 encoder — all in one place',
+      icon: '✏️',
+    },
   ];
 
   return (
