@@ -103,6 +103,32 @@ const CATEGORIES: Category[] = [
       },
     ],
   },
+  {
+    label: 'Developer Tools',
+    emoji: '⚙️',
+    description: 'JWT decoder, regex tester and data format converter',
+    keywords: ['developer', 'dev', 'jwt', 'token', 'regex', 'regexp', 'regular expression', 'csv', 'xml', 'convert', 'converter', 'data format'],
+    tools: [
+      {
+        label: 'JWT Decoder',
+        description: 'Decode and inspect JWT tokens — header, payload and expiry',
+        path: '/tools/developer-tools',
+        keywords: ['jwt', 'token', 'decode jwt', 'jwt decoder', 'json web token', 'auth token'],
+      },
+      {
+        label: 'Regex Tester',
+        description: 'Test regular expressions live with match highlighting',
+        path: '/tools/developer-tools',
+        keywords: ['regex', 'regexp', 'regular expression', 'pattern', 'match', 'regex tester'],
+      },
+      {
+        label: 'JSON / CSV / XML Converter',
+        description: 'Convert between JSON, CSV and XML formats instantly',
+        path: '/tools/developer-tools',
+        keywords: ['csv', 'xml', 'json csv', 'json xml', 'convert csv', 'data converter', 'format converter'],
+      },
+    ],
+  },
 ];
 
 // Flat tool list for direct keyword navigation
