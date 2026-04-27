@@ -7,7 +7,7 @@ import styles from './DevTools.module.css';
 
 function base64UrlDecode(str: string): string {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64 + '=='.slice((base64.length + 3) % 4);
+  const padded = base64 + '==='.slice(0, (4 - (base64.length % 4)) % 4);
   return atob(padded);
 }
 
@@ -16,19 +16,19 @@ function JWTDecoder() {
 
   let header: Record<string, unknown> | null = null;
   let payload: Record<string, unknown> | null = null;
-  let parseError = false;
+  let errorMsg = '';
 
   if (token.trim()) {
     const parts = token.trim().split('.');
-    if (parts.length === 3) {
+    if (parts.length !== 3) {
+      errorMsg = 'Invalid JWT — must have 3 dot-separated parts.';
+    } else {
       try {
         header = JSON.parse(base64UrlDecode(parts[0]));
         payload = JSON.parse(base64UrlDecode(parts[1]));
       } catch {
-        parseError = true;
+        errorMsg = 'Invalid JWT — could not decode header or payload.';
       }
-    } else {
-      parseError = true;
     }
   }
 
@@ -51,8 +51,8 @@ function JWTDecoder() {
         onChange={e => setToken(e.target.value)}
         spellCheck={false}
       />
-      {token.trim() && parseError && (
-        <p className={styles.errorMsg}>Invalid JWT — must have 3 dot-separated parts.</p>
+      {token.trim() && errorMsg && (
+        <p className={styles.errorMsg}>{errorMsg}</p>
       )}
       {header && payload && (
         <>
