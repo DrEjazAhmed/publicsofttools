@@ -5,11 +5,12 @@ import styles from './SummaryOutput.module.css';
 
 interface Props {
   summary: string;
+  summaryMode?: 'openai' | 'extractive' | null;
   isExtractive?: boolean;
   error: string | null;
 }
 
-export default function SummaryOutput({ summary, isExtractive, error }: Props) {
+export default function SummaryOutput({ summary, summaryMode, isExtractive, error }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -53,11 +54,15 @@ export default function SummaryOutput({ summary, isExtractive, error }: Props) {
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <span className={styles.cardTitle}>Summary</span>
-        <span className={styles.wordCount}>{wordCount} words</span>
+        <div className={styles.cardMeta}>
+          {summaryMode === 'openai' && <span className={styles.modeBadgeAi}>✨ AI</span>}
+          {summaryMode === 'extractive' && <span className={styles.modeBadgeExtract}>📄 Extractive</span>}
+          <span className={styles.wordCount}>{wordCount} words</span>
+        </div>
       </div>
       {isExtractive && (
         <div className={styles.extractiveNote}>
-          ⓘ Extractive summary — key sentences selected from the original text. Add a <strong>HUGGINGFACE_API_KEY</strong> for AI-generated summaries.
+          ⓘ No API key detected — showing an extractive summary (original sentences). Add <strong>OPENAI_API_KEY</strong> in Vercel environment variables for AI-generated summaries.
         </div>
       )}
 

@@ -101,12 +101,12 @@ export async function POST(req: NextRequest) {
 
     if (process.env.OPENAI_API_KEY) {
       const summary = await callOpenAI(cleaned, length);
-      return NextResponse.json({ summary });
+      return NextResponse.json({ summary, mode: 'openai' });
     }
 
     // Extractive fallback when no API key is configured
     const summary = extractiveSummarize(cleaned, length);
-    return NextResponse.json({ summary, extractive: true });
+    return NextResponse.json({ summary, mode: 'extractive', extractive: true });
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Summarization failed';

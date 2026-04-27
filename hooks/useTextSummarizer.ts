@@ -13,6 +13,7 @@ export function useTextSummarizer() {
   const [file, setFile] = useState<File | null>(null);
   const [summaryLength, setSummaryLength] = useState<SummaryLength>('medium');
   const [summary, setSummary] = useState('');
+  const [summaryMode, setSummaryMode] = useState<'openai' | 'extractive' | null>(null);
   const [isExtractive, setIsExtractive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
@@ -58,6 +59,7 @@ export function useTextSummarizer() {
       if (!res.ok) throw new Error(data.error || 'Summarization failed');
 
       setSummary(data.summary);
+      setSummaryMode(data.mode ?? null);
       setIsExtractive(!!data.extractive);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -72,6 +74,7 @@ export function useTextSummarizer() {
     setUrl('');
     setFile(null);
     setSummary('');
+    setSummaryMode(null);
     setIsExtractive(false);
     setError(null);
   }, []);
@@ -82,7 +85,7 @@ export function useTextSummarizer() {
     url, setUrl,
     file, setFile,
     summaryLength, setSummaryLength,
-    summary, isExtractive, isLoading, loadingStep, error,
+    summary, summaryMode, isExtractive, isLoading, loadingStep, error,
     summarize, clear,
   };
 }

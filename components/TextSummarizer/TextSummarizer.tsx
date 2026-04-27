@@ -12,7 +12,7 @@ export default function TextSummarizer() {
     url, setUrl,
     file, setFile,
     summaryLength, setSummaryLength,
-    summary, isExtractive, isLoading, loadingStep, error,
+    summary, summaryMode, isExtractive, isLoading, loadingStep, error,
     summarize, clear,
   } = useTextSummarizer();
 
@@ -34,7 +34,7 @@ export default function TextSummarizer() {
         onSubmit={summarize}
         onClear={clear}
       />
-      <SummaryOutput summary={summary} isExtractive={isExtractive} error={error} />
+      <SummaryOutput summary={summary} summaryMode={summaryMode} isExtractive={isExtractive} error={error} />
     </div>
   );
 }

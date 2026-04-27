@@ -24,9 +24,33 @@
   letter-spacing: 0.05em;
 }
 
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .wordCount {
   font-size: 0.8rem;
   color: #9ca3af;
+}
+
+.modeBadgeAi {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.modeBadgeExtract {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #fef9c3;
+  color: #92400e;
 }
 
 .extractiveNote {
