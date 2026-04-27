@@ -16,10 +16,10 @@ export default function Home() {
       icon: '🖼️',
     },
     {
-      id: 'ai-text-summarizer',
-      name: 'AI Text Summarizer',
-      description: 'Summarize long text, articles, and documents instantly with AI',
-      icon: '🤖',
+      id: 'qr-code-generator',
+      name: 'QR Code Generator',
+      description: 'Generate QR codes from any text or URL. Customize colors and download as PNG',
+      icon: '◼',
     },
   ];
 
