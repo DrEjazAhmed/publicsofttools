@@ -171,6 +171,92 @@ function EncoderDecoder() {
   );
 }
 
+// ── JSON Formatter ────────────────────────────────────────────────────
+
+function JsonFormatter() {
+  const [input, setInput] = useState('');
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState('');
+  const [indent, setIndent] = useState<2 | 4>( 2);
+  const [copied, setCopied] = useState(false);
+
+  function format() {
+    try {
+      const parsed = JSON.parse(input);
+      setOutput(JSON.stringify(parsed, null, indent));
+      setError('');
+    } catch (e) {
+      setError((e as Error).message);
+      setOutput('');
+    }
+  }
+
+  function minify() {
+    try {
+      const parsed = JSON.parse(input);
+      setOutput(JSON.stringify(parsed));
+      setError('');
+    } catch (e) {
+      setError((e as Error).message);
+      setOutput('');
+    }
+  }
+
+  function handleCopy() {
+    if (!output) return;
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className={styles.card}>
+      <h2 className={styles.cardTitle}>JSON Formatter &amp; Beautifier</h2>
+      <textarea
+        className={styles.textarea}
+        rows={8}
+        placeholder='Paste your JSON here…'
+        value={input}
+        onChange={e => { setInput(e.target.value); setError(''); setOutput(''); }}
+        spellCheck={false}
+      />
+      <div className={styles.buttonRow}>
+        <button className={styles.actionBtn} onClick={format} disabled={!input.trim()}>Beautify</button>
+        <button className={styles.actionBtn} onClick={minify} disabled={!input.trim()}>Minify</button>
+        <label className={styles.indentLabel}>
+          Indent:
+          <select
+            className={styles.indentSelect}
+            value={indent}
+            onChange={e => setIndent(Number(e.target.value) as 2 | 4)}
+          >
+            <option value={2}>2 spaces</option>
+            <option value={4}>4 spaces</option>
+          </select>
+        </label>
+      </div>
+      {error && <p className={styles.jsonError}>{error}</p>}
+      {output && (
+        <div className={styles.outputWrapper}>
+          <textarea
+            className={`${styles.textarea} ${styles.outputTextarea} ${styles.monoTextarea}`}
+            rows={10}
+            value={output}
+            readOnly
+            spellCheck={false}
+          />
+          <button
+            className={`${styles.actionBtn} ${styles.copyBtn}`}
+            onClick={handleCopy}
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page root ─────────────────────────────────────────────────────────
 
 export default function TextTools() {
@@ -179,6 +265,7 @@ export default function TextTools() {
       <WordCounter />
       <CaseConverter />
       <EncoderDecoder />
+      <JsonFormatter />
     </div>
   );
 }

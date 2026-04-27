@@ -132,6 +132,52 @@
   gap: 10px;
 }
 
+/* ── JSON Formatter ── */
+.jsonError {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.monoTextarea {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.indentLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-left: auto;
+}
+
+.indentSelect {
+  padding: 6px 10px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+}
+
+.indentSelect:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .statsGrid {
