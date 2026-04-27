@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import Chatbot from '@/components/Chatbot';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -31,7 +32,10 @@ export default function RootLayout({
           gtag('config', 'G-NQTY3DRXMG');
         `}</Script>
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Chatbot />
+      </body>
     </html>
   );
 }
