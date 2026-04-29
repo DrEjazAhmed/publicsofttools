@@ -51,6 +51,12 @@ export default function Home() {
       description: 'JWT decoder, regex tester, and JSON/CSV/XML converter — all browser-based',
       icon: '⚙️',
     },
+    {
+      id: 'bmi-calculator',
+      name: 'BMI Calculator',
+      description: 'Calculate your Body Mass Index (BMI) in metric or imperial units and see your healthy weight range.',
+      icon: '⚖️',
+    },
   ];
 
   return (
