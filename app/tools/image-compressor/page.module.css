@@ -1,0 +1,45 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 48px 20px 40px;
+  text-align: center;
+}
+
+.headerInner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.headerInner h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.headerInner p {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0 auto;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+.content {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .headerInner h1 { font-size: 1.6rem; }
+}

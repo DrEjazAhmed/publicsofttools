@@ -10,10 +10,28 @@ export default function Home() {
       icon: '📄',
     },
     {
+      id: 'pdf-merge',
+      name: 'PDF Merge & Split',
+      description: 'Combine multiple PDFs into one, or split a PDF into separate files by page range',
+      icon: '📑',
+    },
+    {
       id: 'image-converter',
       name: 'Image Converter',
       description: 'Convert images between PNG, JPG, WebP, and other formats',
       icon: '🖼️',
+    },
+    {
+      id: 'image-compressor',
+      name: 'Image Compressor',
+      description: 'Reduce image file size with quality and resize controls. See savings before downloading',
+      icon: '📦',
+    },
+    {
+      id: 'ocr',
+      name: 'OCR — Image to Text',
+      description: 'Extract text from images using optical character recognition. Supports 15+ languages',
+      icon: '🔍',
     },
     {
       id: 'qr-code-generator',

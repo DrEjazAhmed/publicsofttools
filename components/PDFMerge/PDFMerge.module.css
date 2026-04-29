@@ -1,0 +1,271 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid #e5e7eb;
+  gap: 0;
+}
+
+.tab {
+  padding: 10px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: #6b7280;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover { color: #374151; }
+
+.tabActive {
+  color: #e74c3c;
+  border-bottom-color: #e74c3c;
+}
+
+/* Drop zone */
+.dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fff;
+}
+
+.dropzone:hover,
+.dropzoneActive {
+  border-color: #e74c3c;
+  background: #fff5f5;
+}
+
+.dropIcon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.dropzone p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.dropzone strong {
+  color: #e74c3c;
+}
+
+.dropzone small {
+  display: block;
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+/* File list */
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.fileIcon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.fileActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #6b7280;
+  transition: background 0.15s;
+}
+
+.iconBtn:hover { background: #f3f4f6; }
+
+.removeBtn {
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.removeBtn:hover { background: #fef2f2; }
+
+/* Controls section */
+.controls {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controlLabel {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 80px;
+}
+
+.input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  flex: 1;
+  min-width: 140px;
+}
+
+.input:focus { border-color: #e74c3c; }
+
+.radioGroup {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.radioGroup label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* Action area */
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  padding: 11px 28px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) { background: #c0392b; }
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: 11px 24px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.secondaryBtn:hover { background: #f9fafb; }
+
+/* Status / progress */
+.status {
+  font-size: 0.9rem;
+  color: #6b7280;
+  padding: 10px 0;
+}
+
+.statusError { color: #ef4444; }
+.statusSuccess { color: #10b981; }
+
+/* Result links */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.downloadLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #065f46;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.downloadLink:hover { background: #d1fae5; }

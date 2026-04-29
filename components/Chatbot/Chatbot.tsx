@@ -38,10 +38,10 @@ interface Category {
 
 const CATEGORIES: Category[] = [
   {
-    label: 'File Tools',
+    label: 'File & Document Tools',
     emoji: '📁',
-    description: 'Work with PDFs and images',
-    keywords: ['file', 'pdf', 'image', 'document', 'convert', 'photo', 'picture'],
+    description: 'Work with PDFs, images and documents',
+    keywords: ['file', 'pdf', 'image', 'document', 'convert', 'photo', 'picture', 'merge', 'split', 'compress', 'ocr', 'text extraction', 'scan'],
     tools: [
       {
         label: 'PDF Editor',
@@ -50,10 +50,28 @@ const CATEGORIES: Category[] = [
         keywords: ['pdf', 'pdf editor', 'edit pdf', 'document', 'annotate'],
       },
       {
+        label: 'PDF Merge & Split',
+        description: 'Combine multiple PDFs into one or split a PDF by page range',
+        path: '/tools/pdf-merge',
+        keywords: ['pdf merge', 'merge pdf', 'split pdf', 'pdf split', 'combine pdf', 'pdf pages', 'extract pages'],
+      },
+      {
         label: 'Image Converter',
         description: 'Convert images between PNG, JPG, WebP and more',
         path: '/tools/image-converter',
         keywords: ['image', 'image converter', 'convert image', 'photo', 'picture', 'jpg', 'png', 'webp'],
+      },
+      {
+        label: 'Image Compressor',
+        description: 'Reduce image file size with quality and resize controls',
+        path: '/tools/image-compressor',
+        keywords: ['image compressor', 'compress image', 'reduce image size', 'image size', 'file size', 'optimize image', 'shrink image'],
+      },
+      {
+        label: 'OCR — Image to Text',
+        description: 'Extract text from images using optical character recognition',
+        path: '/tools/ocr',
+        keywords: ['ocr', 'image to text', 'extract text', 'text from image', 'optical character recognition', 'scan text', 'read image'],
       },
     ],
   },

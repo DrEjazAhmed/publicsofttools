@@ -1,0 +1,272 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Drop zone */
+.dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fff;
+}
+
+.dropzone:hover,
+.dropzoneActive {
+  border-color: #f5576c;
+  background: #fff5f5;
+}
+
+.dropIcon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.dropzone p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.dropzone strong { color: #f5576c; }
+
+.dropzone small {
+  display: block;
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+/* Settings panel */
+.settings {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settingRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingLabel {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settingValue {
+  font-weight: 700;
+  color: #f5576c;
+}
+
+.slider {
+  width: 100%;
+  accent-color: #f5576c;
+  height: 6px;
+  cursor: pointer;
+}
+
+.settingRow select,
+.settingRow input[type="number"] {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  background: #fff;
+  outline: none;
+  max-width: 200px;
+}
+
+.settingRow select:focus,
+.settingRow input[type="number"]:focus {
+  border-color: #f5576c;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.settingRowInline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settingRowInline label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Image list */
+.imageList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.imageItem {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemSizes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.sizeOriginal {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.sizeArrow {
+  font-size: 0.78rem;
+  color: #d1d5db;
+}
+
+.sizeNew {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.sizeSame { color: #9ca3af; }
+
+.saving {
+  font-size: 0.75rem;
+  color: #f5576c;
+  font-weight: 600;
+}
+
+.statusBadge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.statusPending { background: #f3f4f6; color: #6b7280; }
+.statusProcessing { background: #fef3c7; color: #92400e; }
+.statusDone { background: #d1fae5; color: #065f46; }
+.statusError { background: #fee2e2; color: #991b1b; }
+
+.itemActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.downloadBtn {
+  padding: 7px 14px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.downloadBtn:hover { background: #059669; }
+.downloadBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.removeBtn {
+  padding: 7px 10px;
+  background: #fff;
+  border: 1px solid #fca5a5;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.removeBtn:hover { background: #fef2f2; }
+
+/* Actions bar */
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  padding: 11px 28px;
+  background: #f5576c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) { background: #e04556; }
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: 11px 24px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.secondaryBtn:hover { background: #f9fafb; }
